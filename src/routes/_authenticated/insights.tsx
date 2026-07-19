@@ -30,7 +30,9 @@ function Insights() {
   const dynamic: { kind: string; title: string; message: string; severity: string }[] = [];
 
   const carro = expenses.find((e) => e.name.toLowerCase().includes("carro"));
-  if (carro && balances.saldoLivre + reserves.find((r) => r.name.includes("Carro"))!?.current_amount >= Number(carro.amount)) {
+  const reservaCarro = reserves.find((r) => r.name.toLowerCase().includes("carro"));
+  const carroDisponivel = balances.saldoLivre + Number(reservaCarro?.current_amount ?? 0);
+  if (carro && carroDisponivel >= Number(carro.amount)) {
     dynamic.push({
       kind: "oportunidade",
       title: "Você já pode pagar a parcela do carro sem juros",
