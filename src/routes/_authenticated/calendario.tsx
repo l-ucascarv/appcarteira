@@ -1,0 +1,90 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useExpenses } from "@/lib/queries";
+import { Card } from "@/components/ui/card";
+import { brl } from "@/lib/format";
+
+export const Route = createFileRoute("/_authenticated/calendario")({
+  head: () => ({ meta: [{ title: "Calendário — Meu Caixa" }] }),
+  component: Calendario,
+});
+
+function Calendario() {
+  const { data: expenses = [] } = useExpenses();
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstWeekday = new Date(y, m, 1).getDay();
+  const today = now.getDate();
+
+  const cells: (number | null)[] = [
+    ...Array(firstWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  const byDay = new Map<number, typeof expenses>();
+  expenses.forEach((e) => {
+    if (!byDay.has(e.due_day)) byDay.set(e.due_day, []);
+    byDay.get(e.due_day)!.push(e);
+  });
+
+  const statusColor = (day: number) => {
+    const list = byDay.get(day);
+    if (!list || list.length === 0) return "";
+    const hasAtrasado = list.some((e) => e.status === "atrasado" || (e.status === "pendente" && day < today));
+    const allPaid = list.every((e) => e.status === "pago");
+    if (allPaid) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
+    if (hasAtrasado) return "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30";
+    return "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30";
+  };
+
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Calendário</h1>
+        <p className="mt-1 text-sm text-muted-foreground capitalize">{monthName}</p>
+      </div>
+
+      <Card className="rounded-2xl p-4 shadow-none md:p-6">
+        <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-muted-foreground">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
+            <div key={d}>{d}</div>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-7 gap-2">
+          {cells.map((day, i) => (
+            <div
+              key={i}
+              className={`min-h-20 rounded-xl border p-2 text-left text-xs ${
+                day === null ? "border-transparent" : "border-border"
+              } ${day === today ? "ring-2 ring-foreground/40" : ""}`}
+            >
+              {day !== null && (
+                <>
+                  <div className="mb-1 font-medium">{day}</div>
+                  {byDay.get(day)?.map((e) => (
+                    <div
+                      key={e.id}
+                      className={`mb-1 truncate rounded-md border px-1.5 py-0.5 text-[10px] ${statusColor(day)}`}
+                      title={`${e.name} — ${brl(Number(e.amount))}`}
+                    >
+                      {e.name}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="flex gap-3 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Pago</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" />Próximo</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Atrasado</span>
+      </div>
+    </div>
+  );
+}
