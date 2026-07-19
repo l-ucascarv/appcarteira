@@ -64,7 +64,7 @@ function Metas() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="m" stroke="var(--color-muted-foreground)" fontSize={11} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ borderRadius: 12 }} />
+                  <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
                   <Line type="monotone" dataKey="v" stroke="var(--color-foreground)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>

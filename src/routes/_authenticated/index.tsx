@@ -129,7 +129,7 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="m" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ borderRadius: 12 }} />
+                <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
                 <Bar dataKey="Receitas" fill="#10b981" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Despesas" fill="#f43f5e" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -145,7 +145,7 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="i" hide />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ borderRadius: 12 }} />
+                <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
                 <Line type="monotone" dataKey="saldo" stroke="var(--color-foreground)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
