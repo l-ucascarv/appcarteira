@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { ReceiveIncomeDialog } from "@/components/ReceiveIncomeDialog";
+import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 import { ArrowDownRight, ArrowUpRight, PiggyBank, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
@@ -22,6 +23,7 @@ function Fluxo() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [receiveOpen, setReceiveOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
+  const [payOpen, setPayOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
 
   const items = useMemo(() => {
     const receitasPrevistas = income
@@ -44,7 +46,7 @@ function Fluxo() {
       date: new Date(new Date().getFullYear(), new Date().getMonth(), e.due_day).toISOString(),
       status: e.status,
       balance_after: null as number | null,
-      actionable: false,
+      actionable: e.status !== "pago",
     }));
     const txs = transactions.map((t) => ({
       id: t.id,
@@ -142,6 +144,18 @@ function Fluxo() {
                     Receber
                   </Button>
                 )}
+                {it.actionable && it.kind === "despesa" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full ml-2"
+                    onClick={() =>
+                      setPayOpen({ id: it.id, amount: Math.abs(it.amount), name: it.description })
+                    }
+                  >
+                    Pagar
+                  </Button>
+                )}
               </li>
             );
           })}
@@ -155,6 +169,15 @@ function Fluxo() {
           incomeId={receiveOpen.id}
           amount={receiveOpen.amount}
           description={receiveOpen.name}
+        />
+      )}
+      {payOpen && (
+        <PayExpenseDialog
+          open={!!payOpen}
+          onOpenChange={(v) => !v && setPayOpen(null)}
+          expenseId={payOpen.id}
+          amount={payOpen.amount}
+          description={payOpen.name}
         />
       )}
     </div>
