@@ -144,6 +144,18 @@ function Fluxo() {
                     Receber
                   </Button>
                 )}
+                {it.actionable && it.kind === "despesa" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full ml-2"
+                    onClick={() =>
+                      setPayOpen({ id: it.id, amount: Math.abs(it.amount), name: it.description })
+                    }
+                  >
+                    Pagar
+                  </Button>
+                )}
               </li>
             );
           })}
