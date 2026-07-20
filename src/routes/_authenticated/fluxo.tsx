@@ -45,7 +45,7 @@ function Fluxo() {
       date: new Date(new Date().getFullYear(), new Date().getMonth(), e.due_day).toISOString(),
       status: e.status,
       balance_after: null as number | null,
-      actionable: false,
+      actionable: e.status !== "pago",
     }));
     const txs = transactions.map((t) => ({
       id: t.id,
