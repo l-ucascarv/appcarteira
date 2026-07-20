@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 
 function Calendario() {
   const { data: expenses = [] } = useExpenses();
+  const [payOpen, setPayOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
