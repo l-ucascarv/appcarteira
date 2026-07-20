@@ -23,6 +23,7 @@ function Fluxo() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [receiveOpen, setReceiveOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
+  const [payOpen, setPayOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
 
   const items = useMemo(() => {
     const receitasPrevistas = income
