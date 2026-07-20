@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { ReceiveIncomeDialog } from "@/components/ReceiveIncomeDialog";
 import { PayExpenseDialog } from "@/components/PayExpenseDialog";
-import { ArrowDownRight, ArrowUpRight, PiggyBank, Search } from "lucide-react";
+import { AddIncomeDialog } from "@/components/AddIncomeDialog";
+import { AddExpenseDialog } from "@/components/AddExpenseDialog";
+import { ArrowDownRight, ArrowUpRight, PiggyBank, Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
   head: () => ({ meta: [{ title: "Fluxo de Caixa — Meu Caixa" }] }),
