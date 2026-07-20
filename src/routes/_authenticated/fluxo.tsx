@@ -171,6 +171,15 @@ function Fluxo() {
           description={receiveOpen.name}
         />
       )}
+      {payOpen && (
+        <PayExpenseDialog
+          open={!!payOpen}
+          onOpenChange={(v) => !v && setPayOpen(null)}
+          expenseId={payOpen.id}
+          amount={payOpen.amount}
+          description={payOpen.name}
+        />
+      )}
     </div>
   );
 }
