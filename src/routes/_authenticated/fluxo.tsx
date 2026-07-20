@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { ReceiveIncomeDialog } from "@/components/ReceiveIncomeDialog";
 import { PayExpenseDialog } from "@/components/PayExpenseDialog";
-import { ArrowDownRight, ArrowUpRight, PiggyBank, Search } from "lucide-react";
+import { AddIncomeDialog } from "@/components/AddIncomeDialog";
+import { AddExpenseDialog } from "@/components/AddExpenseDialog";
+import { ArrowDownRight, ArrowUpRight, PiggyBank, Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
   head: () => ({ meta: [{ title: "Fluxo de Caixa — Meu Caixa" }] }),
@@ -24,6 +26,9 @@ function Fluxo() {
   const [q, setQ] = useState("");
   const [receiveOpen, setReceiveOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
   const [payOpen, setPayOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
+  const [addIncome, setAddIncome] = useState(false);
+  const [addExpense, setAddExpense] = useState(false);
+
 
   const items = useMemo(() => {
     const receitasPrevistas = income
@@ -67,12 +72,23 @@ function Fluxo() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Fluxo de Caixa</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Linha do tempo completa: receitas, despesas e reservas.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Fluxo de Caixa</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Linha do tempo completa: receitas, despesas e reservas.
+          </p>
+        </div>
+        <div className="flex flex-none gap-2">
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => setAddIncome(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Receita
+          </Button>
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => setAddExpense(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Despesa
+          </Button>
+        </div>
       </div>
+
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
@@ -180,6 +196,9 @@ function Fluxo() {
           description={payOpen.name}
         />
       )}
+      <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
+      <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
     </div>
   );
 }
+
