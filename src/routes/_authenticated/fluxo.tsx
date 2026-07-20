@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { ReceiveIncomeDialog } from "@/components/ReceiveIncomeDialog";
+import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 import { ArrowDownRight, ArrowUpRight, PiggyBank, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
