@@ -89,6 +89,50 @@ function Calendario() {
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" />Próximo</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Atrasado</span>
       </div>
+
+      <Card className="rounded-2xl p-4 shadow-none md:p-6">
+        <div className="mb-3 text-sm font-medium">Contas do mês</div>
+        <ul className="divide-y divide-border">
+          {[...expenses].sort((a, b) => a.due_day - b.due_day).map((e) => {
+            const overdue = e.status !== "pago" && e.due_day < today;
+            return (
+              <li key={e.id} className="flex items-center gap-3 py-3">
+                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                  {e.due_day}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{e.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {e.status === "pago" ? "Pago" : overdue ? "Atrasado" : "Pendente"}
+                    {e.installment_current && e.installment_total ? ` • ${e.installment_current}/${e.installment_total}` : ""}
+                  </div>
+                </div>
+                <div className="text-sm font-semibold tabular-nums">{brl(Number(e.amount))}</div>
+                {e.status !== "pago" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setPayOpen({ id: e.id, amount: Number(e.amount), name: e.name })}
+                  >
+                    Pagar
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+
+      {payOpen && (
+        <PayExpenseDialog
+          open={!!payOpen}
+          onOpenChange={(v) => !v && setPayOpen(null)}
+          expenseId={payOpen.id}
+          amount={payOpen.amount}
+          description={payOpen.name}
+        />
+      )}
     </div>
   );
 }
