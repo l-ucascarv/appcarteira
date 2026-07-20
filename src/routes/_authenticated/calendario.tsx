@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useExpenses } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
+import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({ meta: [{ title: "Calendário — Meu Caixa" }] }),
