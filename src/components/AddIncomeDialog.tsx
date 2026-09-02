@@ -15,7 +15,10 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [kind, setKind] = useState<(typeof KINDS)[number]>("extra");
-  const [refMonth, setRefMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const [recurring, setRecurring] = useState(false);
   const [owner, setOwner] = useState<Owner>("ele");
   const [loading, setLoading] = useState(false);
