@@ -42,7 +42,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
       });
       if (error) throw error;
       toast.success("Despesa lançada");
-      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries();
       setName(""); setAmount(""); setDueDay("10"); setCategory("fixa");
       setInstCur(""); setInstTot(""); setNote("");
       onOpenChange(false);
