@@ -59,6 +59,17 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-cat-entrada: var(--cat-entrada);
+  --color-cat-saida: var(--cat-saida);
+  --color-cat-diario: var(--cat-diario);
+  --color-cat-economia: var(--cat-economia);
+  --color-cat-cartao: var(--cat-cartao);
 }
 
 :root {
@@ -69,8 +80,19 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.45 0.24 288);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.68 0.17 152);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.78 0.16 78);
+  --warning-foreground: oklch(0.22 0.02 90);
+  --danger: oklch(0.62 0.22 22);
+  --danger-foreground: oklch(0.99 0 0);
+  --cat-entrada: oklch(0.68 0.17 152);
+  --cat-saida: oklch(0.65 0.2 33);
+  --cat-diario: oklch(0.6 0.22 350);
+  --cat-economia: oklch(0.8 0.18 130);
+  --cat-cartao: oklch(0.55 0.24 290);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -81,7 +103,7 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --ring: oklch(0.45 0.24 288);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -104,8 +126,19 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.62 0.23 290);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.17 152);
+  --success-foreground: oklch(0.15 0.02 150);
+  --warning: oklch(0.82 0.16 78);
+  --warning-foreground: oklch(0.2 0.02 90);
+  --danger: oklch(0.68 0.2 22);
+  --danger-foreground: oklch(0.99 0 0);
+  --cat-entrada: oklch(0.72 0.17 152);
+  --cat-saida: oklch(0.7 0.2 33);
+  --cat-diario: oklch(0.68 0.22 350);
+  --cat-economia: oklch(0.82 0.18 130);
+  --cat-cartao: oklch(0.66 0.23 290);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
