@@ -107,6 +107,7 @@ function Lancamentos() {
         status: e.status,
         when: `dia ${e.due_day}`,
         owner: (e as { owner?: string }).owner ?? "ele",
+        recurrent: e.category === "fixa" || e.category === "parcelada",
       })),
       ...transactions
         .filter((t) => t.kind !== "reserva" && inMonth(t.occurred_at as string))
