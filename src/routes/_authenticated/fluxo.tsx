@@ -102,6 +102,7 @@ function Fluxo() {
         description: i.name,
         amount: Number(i.amount),
         actionable: isCurrentMonth,
+        owner: (i as { owner?: string }).owner ?? "ele",
       });
     }
 
