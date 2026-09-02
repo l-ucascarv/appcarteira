@@ -195,3 +195,31 @@ export function usePayExpense() {
     },
   });
 }
+
+type EntryTable = "income" | "expenses" | "transactions";
+
+export function useDeleteEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { table: EntryTable; id: string }) => {
+      const { error } = await supabase.from(input.table).delete().eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export function useDeleteAllEntries() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const uid = await currentUserId();
+      if (!uid) throw new Error("Sem sessão");
+      for (const t of ["transactions", "income", "expenses"] as EntryTable[]) {
+        const { error } = await supabase.from(t).delete().eq("user_id", uid);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
