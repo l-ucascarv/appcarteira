@@ -52,6 +52,7 @@ export type Database = {
           installment_total: number | null
           name: string
           note: string | null
+          owner: string
           status: string
           user_id: string
         }
@@ -65,6 +66,7 @@ export type Database = {
           installment_total?: number | null
           name: string
           note?: string | null
+          owner?: string
           status?: string
           user_id: string
         }
@@ -78,6 +80,7 @@ export type Database = {
           installment_total?: number | null
           name?: string
           note?: string | null
+          owner?: string
           status?: string
           user_id?: string
         }
@@ -120,6 +123,7 @@ export type Database = {
           id: string
           kind: string
           name: string
+          owner: string
           received_at: string | null
           recurring: boolean
           reference_month: string | null
@@ -132,6 +136,7 @@ export type Database = {
           id?: string
           kind: string
           name: string
+          owner?: string
           received_at?: string | null
           recurring?: boolean
           reference_month?: string | null
@@ -144,6 +149,7 @@ export type Database = {
           id?: string
           kind?: string
           name?: string
+          owner?: string
           received_at?: string | null
           recurring?: boolean
           reference_month?: string | null
@@ -272,6 +278,7 @@ export type Database = {
           id: string
           kind: string
           occurred_at: string
+          owner: string
           reference_id: string | null
           user_id: string
         }
@@ -283,6 +290,7 @@ export type Database = {
           id?: string
           kind: string
           occurred_at?: string
+          owner?: string
           reference_id?: string | null
           user_id: string
         }
@@ -294,6 +302,7 @@ export type Database = {
           id?: string
           kind?: string
           occurred_at?: string
+          owner?: string
           reference_id?: string | null
           user_id?: string
         }

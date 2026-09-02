@@ -9,6 +9,7 @@ import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 import { AddIncomeDialog } from "@/components/AddIncomeDialog";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
+import { OwnerIcon } from "@/components/OwnerBadge";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
   head: () => ({
@@ -32,6 +33,7 @@ type DayEvent = {
   description: string;
   amount: number; // sempre positivo
   actionable: boolean;
+  owner: string;
 };
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -84,6 +86,7 @@ function Fluxo() {
         description: t.description as string,
         amount: Math.abs(amt),
         actionable: false,
+        owner: (t as { owner?: string }).owner ?? "ele",
       };
       push(amt >= 0 ? inByDay : outByDay, day, ev);
     }
@@ -99,6 +102,7 @@ function Fluxo() {
         description: i.name,
         amount: Number(i.amount),
         actionable: isCurrentMonth,
+        owner: (i as { owner?: string }).owner ?? "ele",
       });
     }
 
@@ -110,6 +114,7 @@ function Fluxo() {
         description: e.name,
         amount: Number(e.amount),
         actionable: isCurrentMonth,
+        owner: (e as { owner?: string }).owner ?? "ele",
       });
     }
 
@@ -223,6 +228,7 @@ function Fluxo() {
                   <div className="space-y-1">
                     {r.events.map((ev) => (
                       <div key={`${ev.kind}-${ev.id}`} className="flex min-w-0 items-center gap-2">
+                        <OwnerIcon owner={ev.owner} />
                         <span className="truncate text-sm">{ev.description}</span>
                         <span
                           className={`shrink-0 text-sm font-medium tabular-nums ${
