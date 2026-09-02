@@ -35,6 +35,7 @@ type Row = {
   status: string;
   when: string;
   owner: string;
+  recurrent: boolean;
 };
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -51,6 +52,7 @@ const CAT_DOT: Record<string, string> = {
 };
 
 type Filter = "todos" | "entrada" | "saida";
+type Kind = "variaveis" | "recorrentes";
 
 function Lancamentos() {
   const { data: income = [] } = useIncome();
@@ -68,6 +70,7 @@ function Lancamentos() {
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const shift = (n: number) => setCursor(new Date(year, month + n, 1));
+  const [kind, setKind] = useState<Kind>("variaveis");
   const [q, setQ] = useState("");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
@@ -92,6 +95,7 @@ function Lancamentos() {
           status: i.status,
           when: i.reference_month ? String(i.reference_month).slice(0, 7) : "recorrente",
           owner: (i as { owner?: string }).owner ?? "ele",
+          recurrent: Boolean(i.recurring),
         })),
       ...expenses.map((e) => ({
         id: e.id,
@@ -103,6 +107,7 @@ function Lancamentos() {
         status: e.status,
         when: `dia ${e.due_day}`,
         owner: (e as { owner?: string }).owner ?? "ele",
+        recurrent: e.category === "fixa" || e.category === "parcelada",
       })),
       ...transactions
         .filter((t) => t.kind !== "reserva" && inMonth(t.occurred_at as string))
@@ -116,6 +121,7 @@ function Lancamentos() {
           status: "realizado",
           when: new Date(t.occurred_at as string).toLocaleDateString("pt-BR"),
           owner: (t as { owner?: string }).owner ?? "ele",
+          recurrent: false,
         })),
     ];
     const term = q.trim().toLowerCase();
@@ -123,9 +129,10 @@ function Lancamentos() {
       (r) =>
         (filter === "todos" || r.type === filter) &&
         (ownerFilter === "todos" || r.owner === ownerFilter) &&
+        (kind === "recorrentes" ? r.recurrent : !r.recurrent) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, transactions, filter, ownerFilter, q, year, month]);
+  }, [income, expenses, transactions, filter, ownerFilter, kind, q, year, month]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -194,6 +201,20 @@ function Lancamentos() {
           >
             {o !== "todos" && <OwnerIcon owner={o} />}
             {o === "todos" ? "Casal" : ownerLabel(o)}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+        {(["variaveis", "recorrentes"] as Kind[]).map((k) => (
+          <button
+            key={k}
+            onClick={() => setKind(k)}
+            className={`rounded-full py-2 text-sm font-medium transition-colors ${
+              kind === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            {k === "variaveis" ? "Variáveis" : "Recorrentes"}
           </button>
         ))}
       </div>
