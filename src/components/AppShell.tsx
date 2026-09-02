@@ -79,10 +79,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-4 w-4" />
-          </div>
-          <span className="text-sm font-semibold">Meu Caixa</span>
+          <Wallet className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold lowercase">meu caixa</span>
         </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
