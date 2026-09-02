@@ -161,7 +161,7 @@ function Fluxo() {
             key={v}
             onClick={() => setView(v)}
             className={`rounded-full py-2 text-sm font-medium transition-colors ${
-              view === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              view === v ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
             {v === "entradas" ? "Entradas" : "Saídas"}
@@ -175,7 +175,7 @@ function Fluxo() {
           <div className="text-xs text-muted-foreground">Total {view === "entradas" ? "entradas" : "saídas"}</div>
           <div
             className={`mt-1 text-lg font-semibold tabular-nums ${
-              view === "entradas" ? "text-emerald-600" : "text-rose-600"
+              view === "entradas" ? "text-success" : "text-danger"
             }`}
           >
             {brl(view === "entradas" ? totalIn : totalOut)}
@@ -226,7 +226,7 @@ function Fluxo() {
                         <span className="truncate text-sm">{ev.description}</span>
                         <span
                           className={`shrink-0 text-sm font-medium tabular-nums ${
-                            ev.kind === "receita" ? "text-emerald-600" : "text-rose-600"
+                            ev.kind === "receita" ? "text-success" : "text-danger"
                           }`}
                         >
                           {ev.kind === "receita" ? "+" : "−"}
@@ -254,9 +254,9 @@ function Fluxo() {
               <span
                 className={`rounded-md px-2 py-1 text-right text-sm font-medium tabular-nums ${
                   r.balance < 0
-                    ? "bg-rose-500/10 text-rose-600"
+                    ? "bg-danger/10 text-danger"
                     : r.value > 0
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    ? "bg-success/15 text-success"
                     : "text-muted-foreground"
                 }`}
               >
