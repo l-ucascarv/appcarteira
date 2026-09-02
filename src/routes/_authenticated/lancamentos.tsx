@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { brl } from "@/lib/format";
 import { AddIncomeDialog } from "@/components/AddIncomeDialog";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/lancamentos")({
@@ -33,7 +34,10 @@ type Row = {
   amount: number;
   status: string;
   when: string;
+  owner: string;
 };
+
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const CAT_DOT: Record<string, string> = {
   salario: "bg-cat-entrada",
@@ -56,22 +60,39 @@ function Lancamentos() {
   const delAll = useDeleteAllEntries();
 
   const [filter, setFilter] = useState<Filter>("todos");
+  const [ownerFilter, setOwnerFilter] = useState<Owner | "todos">("todos");
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const shift = (n: number) => setCursor(new Date(year, month + n, 1));
   const [q, setQ] = useState("");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
 
   const rows = useMemo<Row[]>(() => {
+    const inMonth = (iso: string | null) => {
+      if (!iso) return false;
+      const d = new Date(iso);
+      return d.getFullYear() === year && d.getMonth() === month;
+    };
+
     const list: Row[] = [
-      ...income.map((i) => ({
-        id: i.id,
-        table: "income" as const,
-        type: "entrada" as const,
-        description: i.name,
-        category: i.kind,
-        amount: Number(i.amount),
-        status: i.status,
-        when: i.reference_month ? String(i.reference_month) : "recorrente",
-      })),
+      ...income
+        .filter((i) => i.recurring || inMonth(i.reference_month))
+        .map((i) => ({
+          id: i.id,
+          table: "income" as const,
+          type: "entrada" as const,
+          description: i.name,
+          category: i.kind,
+          amount: Number(i.amount),
+          status: i.status,
+          when: i.reference_month ? String(i.reference_month).slice(0, 7) : "recorrente",
+          owner: (i as { owner?: string }).owner ?? "ele",
+        })),
       ...expenses.map((e) => ({
         id: e.id,
         table: "expenses" as const,
@@ -81,9 +102,10 @@ function Lancamentos() {
         amount: Number(e.amount),
         status: e.status,
         when: `dia ${e.due_day}`,
+        owner: (e as { owner?: string }).owner ?? "ele",
       })),
       ...transactions
-        .filter((t) => t.kind !== "reserva")
+        .filter((t) => t.kind !== "reserva" && inMonth(t.occurred_at as string))
         .map((t) => ({
           id: t.id as string,
           table: "transactions" as const,
@@ -93,15 +115,17 @@ function Lancamentos() {
           amount: Math.abs(Number(t.amount)),
           status: "realizado",
           when: new Date(t.occurred_at as string).toLocaleDateString("pt-BR"),
+          owner: (t as { owner?: string }).owner ?? "ele",
         })),
     ];
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
         (filter === "todos" || r.type === filter) &&
+        (ownerFilter === "todos" || r.owner === ownerFilter) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, transactions, filter, q]);
+  }, [income, expenses, transactions, filter, ownerFilter, q, year, month]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -147,6 +171,33 @@ function Lancamentos() {
         </Card>
       </div>
 
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => shift(-1)} aria-label="Mês anterior">
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="text-center text-base font-semibold tracking-tight">
+          {MONTHS[month]}/{String(year).slice(2)}
+        </div>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => shift(1)} aria-label="Próximo mês">
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+        {(["todos", ...OWNERS] as (Owner | "todos")[]).map((o) => (
+          <button
+            key={o}
+            onClick={() => setOwnerFilter(o)}
+            className={`flex items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-medium transition-colors ${
+              ownerFilter === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            {o !== "todos" && <OwnerIcon owner={o} />}
+            {o === "todos" ? "Casal" : ownerLabel(o)}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
         {(["todos", "entrada", "saida"] as Filter[]).map((f) => (
           <button
@@ -187,6 +238,7 @@ function Lancamentos() {
           )}
           {rows.map((r) => (
             <li key={`${r.table}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
+              <OwnerIcon owner={r.owner} />
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${CAT_DOT[r.category] ?? "bg-muted-foreground"}`} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{r.description}</div>
