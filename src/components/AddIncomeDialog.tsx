@@ -38,7 +38,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
       });
       if (error) throw error;
       toast.success("Receita lançada");
-      qc.invalidateQueries({ queryKey: ["income"] });
+      qc.invalidateQueries();
       setName(""); setAmount(""); setKind("extra"); setRecurring(false);
       onOpenChange(false);
     } catch (err) {
