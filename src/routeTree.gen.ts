@@ -14,9 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedReservasRouteImport } from './routes/_authenticated/reservas'
 import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
-import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
-import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedFluxoRouteImport } from './routes/_authenticated/fluxo'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 
@@ -44,22 +42,12 @@ const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
   path: '/previsao',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
-  id: '/metas',
-  path: '/metas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedLancamentosRoute =
   AuthenticatedLancamentosRouteImport.update({
     id: '/lancamentos',
     path: '/lancamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFluxoRoute = AuthenticatedFluxoRouteImport.update({
   id: '/fluxo',
   path: '/fluxo',
@@ -76,9 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/fluxo': typeof AuthenticatedFluxoRoute
-  '/insights': typeof AuthenticatedInsightsRoute
   '/lancamentos': typeof AuthenticatedLancamentosRoute
-  '/metas': typeof AuthenticatedMetasRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/reservas': typeof AuthenticatedReservasRoute
 }
@@ -86,9 +72,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/fluxo': typeof AuthenticatedFluxoRoute
-  '/insights': typeof AuthenticatedInsightsRoute
   '/lancamentos': typeof AuthenticatedLancamentosRoute
-  '/metas': typeof AuthenticatedMetasRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/reservas': typeof AuthenticatedReservasRoute
   '/': typeof AuthenticatedIndexRoute
@@ -99,9 +83,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/fluxo': typeof AuthenticatedFluxoRoute
-  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/lancamentos': typeof AuthenticatedLancamentosRoute
-  '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/reservas': typeof AuthenticatedReservasRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -113,9 +95,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calendario'
     | '/fluxo'
-    | '/insights'
     | '/lancamentos'
-    | '/metas'
     | '/previsao'
     | '/reservas'
   fileRoutesByTo: FileRoutesByTo
@@ -123,9 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calendario'
     | '/fluxo'
-    | '/insights'
     | '/lancamentos'
-    | '/metas'
     | '/previsao'
     | '/reservas'
     | '/'
@@ -135,9 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/calendario'
     | '/_authenticated/fluxo'
-    | '/_authenticated/insights'
     | '/_authenticated/lancamentos'
-    | '/_authenticated/metas'
     | '/_authenticated/previsao'
     | '/_authenticated/reservas'
     | '/_authenticated/'
@@ -185,25 +161,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPrevisaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/metas': {
-      id: '/_authenticated/metas'
-      path: '/metas'
-      fullPath: '/metas'
-      preLoaderRoute: typeof AuthenticatedMetasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/lancamentos': {
       id: '/_authenticated/lancamentos'
       path: '/lancamentos'
       fullPath: '/lancamentos'
       preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/insights': {
-      id: '/_authenticated/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/fluxo': {
@@ -226,9 +188,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedFluxoRoute: typeof AuthenticatedFluxoRoute
-  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedLancamentosRoute: typeof AuthenticatedLancamentosRoute
-  AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedPrevisaoRoute: typeof AuthenticatedPrevisaoRoute
   AuthenticatedReservasRoute: typeof AuthenticatedReservasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -237,9 +197,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedFluxoRoute: AuthenticatedFluxoRoute,
-  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedLancamentosRoute: AuthenticatedLancamentosRoute,
-  AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedPrevisaoRoute: AuthenticatedPrevisaoRoute,
   AuthenticatedReservasRoute: AuthenticatedReservasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

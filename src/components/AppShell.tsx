@@ -4,9 +4,7 @@ import {
   ArrowLeftRight,
   Calendar,
   PiggyBank,
-  Target,
   TrendingUp,
-  Lightbulb,
   LogOut,
   Moon,
   Sun,
@@ -24,9 +22,7 @@ const NAV = [
   { to: "/lancamentos", label: "Lançamentos", icon: ListChecks },
   { to: "/calendario", label: "Calendário", icon: Calendar },
   { to: "/reservas", label: "Reservas", icon: PiggyBank },
-  { to: "/metas", label: "Metas", icon: Target },
   { to: "/previsao", label: "Previsão", icon: TrendingUp },
-  { to: "/insights", label: "Insights", icon: Lightbulb },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
