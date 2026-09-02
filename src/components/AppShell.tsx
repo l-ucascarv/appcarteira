@@ -38,17 +38,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Sidebar (desktop) */}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card/40 px-5 py-6 md:flex md:flex-col">
-        <div className="mb-8 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Wallet className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold tracking-tight">Meu Caixa</div>
-            <div className="text-xs text-muted-foreground">Consultor financeiro</div>
-          </div>
+      <aside className="fixed inset-y-0 left-0 hidden w-56 border-r border-border bg-background px-3 py-5 md:flex md:flex-col">
+        <div className="mb-6 flex items-center gap-2 px-2">
+          <Wallet className="h-5 w-5 text-primary" />
+          <span className="text-sm font-semibold lowercase tracking-tight">meu caixa</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="flex flex-1 flex-col">
           {NAV.map((n) => {
             const active = loc.pathname === n.to;
             const Icon = n.icon;
@@ -56,10 +51,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={n.to}
                 to={n.to}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                className={`flex items-center gap-3 px-2 py-2.5 text-sm lowercase transition-colors ${
+                  active ? "font-semibold text-primary" : "text-foreground/70 hover:text-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
