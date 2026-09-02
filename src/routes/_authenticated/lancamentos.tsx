@@ -121,6 +121,7 @@ function Lancamentos() {
           status: "realizado",
           when: new Date(t.occurred_at as string).toLocaleDateString("pt-BR"),
           owner: (t as { owner?: string }).owner ?? "ele",
+          recurrent: false,
         })),
     ];
     const term = q.trim().toLowerCase();
@@ -128,9 +129,10 @@ function Lancamentos() {
       (r) =>
         (filter === "todos" || r.type === filter) &&
         (ownerFilter === "todos" || r.owner === ownerFilter) &&
+        (kind === "recorrentes" ? r.recurrent : !r.recurrent) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, transactions, filter, ownerFilter, q, year, month]);
+  }, [income, expenses, transactions, filter, ownerFilter, kind, q, year, month]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
