@@ -92,12 +92,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="md:pl-60 pb-24 md:pb-8">
+      <main className="md:pl-56 pb-24 md:pb-8">
         <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-10">{children}</div>
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex justify-between gap-1 overflow-x-auto border-t border-border bg-background/95 px-2 py-2 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex justify-between gap-1 overflow-x-auto border-t border-border bg-background px-2 py-2 md:hidden">
         {NAV.map((n) => {
           const active = loc.pathname === n.to;
           const Icon = n.icon;
@@ -105,8 +105,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={n.to}
               to={n.to}
-              className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] ${
-                active ? "text-primary" : "text-muted-foreground"
+              className={`flex shrink-0 flex-col items-center gap-0.5 px-2 py-1 text-[10px] lowercase ${
+                active ? "font-semibold text-primary" : "text-muted-foreground"
               }`}
             >
               <Icon className="h-4 w-4" />
