@@ -14,7 +14,10 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [dueDay, setDueDay] = useState("10");
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("fixa");
   const [instCur, setInstCur] = useState("");
   const [instTot, setInstTot] = useState("");
@@ -33,7 +36,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
         owner,
         name,
         amount: Number(amount),
-        due_day: Number(dueDay),
+        due_day: Number(dueDate.slice(8, 10)),
         category,
         status: "pendente",
         installment_current: instCur ? Number(instCur) : null,
@@ -43,7 +46,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
       if (error) throw error;
       toast.success("Despesa lançada");
       qc.invalidateQueries();
-      setName(""); setAmount(""); setDueDay("10"); setCategory("fixa");
+      setName(""); setAmount(""); setDueDate(dueDate); setCategory("fixa");
       setInstCur(""); setInstTot(""); setNote("");
       onOpenChange(false);
     } catch (err) {
@@ -72,8 +75,8 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
               <Input type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Dia do vencimento</Label>
-              <Input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} required />
+              <Label>Data de vencimento</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
             </div>
           </div>
           <div className="space-y-2">

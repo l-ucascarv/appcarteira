@@ -35,7 +35,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
         name,
         amount: Number(amount),
         kind,
-        reference_month: refMonth ? `${refMonth}-01` : null,
+        reference_month: date || null,
         recurring,
         status: "previsto",
       });
@@ -82,8 +82,8 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Mês de referência</Label>
-              <Input type="month" value={refMonth} onChange={(e) => setRefMonth(e.target.value)} />
+              <Label>Data</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
             </div>
             <label className="flex items-end gap-2 pb-2">
               <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
