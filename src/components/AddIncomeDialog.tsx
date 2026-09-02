@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { OwnerSelect, type Owner } from "@/components/OwnerBadge";
 
 const KINDS = ["salario", "plantao", "comissao", "extra"] as const;
 
@@ -16,6 +17,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const [kind, setKind] = useState<(typeof KINDS)[number]>("extra");
   const [refMonth, setRefMonth] = useState(new Date().toISOString().slice(0, 7));
   const [recurring, setRecurring] = useState(false);
+  const [owner, setOwner] = useState<Owner>("ele");
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -26,6 +28,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
       if (!u.user) throw new Error("Sem sessão");
       const { error } = await supabase.from("income").insert({
         user_id: u.user.id,
+        owner,
         name,
         amount: Number(amount),
         kind,
@@ -50,6 +53,10 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
       <DialogContent className="rounded-2xl">
         <DialogHeader><DialogTitle>Nova receita</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Quem lançou</Label>
+            <OwnerSelect value={owner} onChange={setOwner} />
+          </div>
           <div className="space-y-2">
             <Label>Descrição</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
