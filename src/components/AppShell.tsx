@@ -11,6 +11,7 @@ import {
   Moon,
   Sun,
   Wallet,
+  ListChecks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/use-theme";
@@ -20,6 +21,7 @@ import type { ReactNode } from "react";
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/fluxo", label: "Fluxo", icon: ArrowLeftRight },
+  { to: "/lancamentos", label: "Lançamentos", icon: ListChecks },
   { to: "/calendario", label: "Calendário", icon: Calendar },
   { to: "/reservas", label: "Reservas", icon: PiggyBank },
   { to: "/metas", label: "Metas", icon: Target },
@@ -42,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card/40 px-5 py-6 md:flex md:flex-col">
         <div className="mb-8 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Wallet className="h-5 w-5" />
           </div>
           <div>
@@ -60,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={n.to}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
                   active
-                    ? "bg-foreground text-background"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -88,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Wallet className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold">Meu Caixa</span>
@@ -108,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex justify-around border-t border-border bg-background/95 py-2 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex justify-between gap-1 overflow-x-auto border-t border-border bg-background/95 px-2 py-2 backdrop-blur md:hidden">
         {NAV.map((n) => {
           const active = loc.pathname === n.to;
           const Icon = n.icon;
@@ -116,8 +118,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={n.to}
               to={n.to}
-              className={`flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] ${
-                active ? "text-foreground" : "text-muted-foreground"
+              className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] ${
+                active ? "text-primary" : "text-muted-foreground"
               }`}
             >
               <Icon className="h-4 w-4" />
