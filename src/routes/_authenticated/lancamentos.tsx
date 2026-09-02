@@ -70,6 +70,7 @@ function Lancamentos() {
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const shift = (n: number) => setCursor(new Date(year, month + n, 1));
+  const [kind, setKind] = useState<Kind>("variaveis");
   const [q, setQ] = useState("");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
