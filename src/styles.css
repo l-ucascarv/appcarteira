@@ -73,8 +73,8 @@
 }
 
 :root {
-  --radius: 0.25rem;
-  --background: oklch(1 0 0);
+  --radius: 0.75rem;
+  --background: oklch(0.98 0.002 250);
   --foreground: oklch(0.18 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0 0);
@@ -93,15 +93,15 @@
   --cat-diario: oklch(0.72 0.15 60);
   --cat-economia: oklch(0.75 0.16 130);
   --cat-cartao: oklch(0.5 0.02 260);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.97 0.002 250);
   --secondary-foreground: oklch(0.18 0 0);
-  --muted: oklch(0.96 0 0);
+  --muted: oklch(0.965 0.002 250);
   --muted-foreground: oklch(0.55 0 0);
   --accent: oklch(0.96 0 0);
   --accent-foreground: oklch(0.18 0 0);
   --destructive: oklch(0.6 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0 0);
+  --border: oklch(0.92 0.002 250);
   --input: oklch(0.9 0 0);
   --ring: oklch(0.63 0.2 33);
   --chart-1: oklch(0.646 0.222 41.116);
@@ -120,7 +120,7 @@
 }
 
 .dark {
-  --background: oklch(0.16 0 0);
+  --background: oklch(0.15 0.004 250);
   --foreground: oklch(0.97 0 0);
   --card: oklch(0.2 0 0);
   --card-foreground: oklch(0.97 0 0);
@@ -174,7 +174,7 @@
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.014em;
   }
 
   body {
@@ -183,16 +183,11 @@
   }
 }
 
-/* Design system: superfícies planas e cantos retos (referência tabular) */
-.rounded-xl,
-.rounded-2xl,
-.rounded-3xl {
-  border-radius: 0.25rem;
+/* Apple-like superfícies: cantos suaves, sombras discretas */
+@utility surface-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 5%), 0 8px 24px -16px oklch(0 0 0 / 18%);
 }
 
-.shadow-sm,
-.shadow,
-.shadow-md,
-.shadow-lg {
-  box-shadow: none;
-}
