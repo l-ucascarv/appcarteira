@@ -52,6 +52,7 @@ const CAT_DOT: Record<string, string> = {
 };
 
 type Filter = "todos" | "entrada" | "saida";
+type Kind = "variaveis" | "recorrentes";
 
 function Lancamentos() {
   const { data: income = [] } = useIncome();
