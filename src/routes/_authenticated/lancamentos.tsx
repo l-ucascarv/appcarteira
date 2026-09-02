@@ -95,6 +95,7 @@ function Lancamentos() {
           status: i.status,
           when: i.reference_month ? String(i.reference_month).slice(0, 7) : "recorrente",
           owner: (i as { owner?: string }).owner ?? "ele",
+          recurrent: Boolean(i.recurring),
         })),
       ...expenses.map((e) => ({
         id: e.id,
