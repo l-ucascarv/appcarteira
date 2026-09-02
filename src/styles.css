@@ -183,16 +183,11 @@
   }
 }
 
-/* Design system: superfícies planas e cantos retos (referência tabular) */
-.rounded-xl,
-.rounded-2xl,
-.rounded-3xl {
-  border-radius: 0.25rem;
+/* Apple-like superfícies: cantos suaves, sombras discretas */
+@utility surface-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 5%), 0 8px 24px -16px oklch(0 0 0 / 18%);
 }
 
-.shadow-sm,
-.shadow,
-.shadow-md,
-.shadow-lg {
-  box-shadow: none;
-}
