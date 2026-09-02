@@ -205,6 +205,20 @@ function Lancamentos() {
         ))}
       </div>
 
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+        {(["variaveis", "recorrentes"] as Kind[]).map((k) => (
+          <button
+            key={k}
+            onClick={() => setKind(k)}
+            className={`rounded-full py-2 text-sm font-medium transition-colors ${
+              kind === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            {k === "variaveis" ? "Variáveis" : "Recorrentes"}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
         {(["todos", "entrada", "saida"] as Filter[]).map((f) => (
           <button
