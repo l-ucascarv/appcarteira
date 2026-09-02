@@ -40,14 +40,23 @@ function Dashboard() {
     .filter((i) => i.kind === "comissao" && i.status === "previsto")
     .reduce((s, i) => s + Number(i.amount), 0);
 
-  // Chart: last 6 months synthetic (based on current data)
+  // Chart: últimos 6 meses a partir dos lançamentos reais
   const now = new Date();
+  const sameMonth = (iso: string | null | undefined, d: Date) => {
+    if (!iso) return false;
+    const x = new Date(iso);
+    return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth();
+  };
   const monthsChart = Array.from({ length: 6 }, (_, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
+    const isCurrent = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     const rec = income
-      .filter((i) => i.recurring || (i.reference_month && new Date(i.reference_month).getMonth() === d.getMonth()))
+      .filter((i) => (i.recurring ? true : sameMonth(i.reference_month, d)))
       .reduce((s, i) => s + Number(i.amount), 0);
-    return { m: shortMonth(d), Receitas: rec, Despesas: monthDespesa };
+    const desp = expenses
+      .filter((e) => e.category === "fixa" || e.category === "parcelada" || isCurrent)
+      .reduce((s, e) => s + Number(e.amount), 0);
+    return { m: shortMonth(d), Receitas: rec, Despesas: desp };
   });
 
   // Evolução patrimonial (baseada em transactions.balance_after)
