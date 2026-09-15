@@ -65,7 +65,6 @@ function Dashboard() {
   };
   const monthsChart = Array.from({ length: 6 }, (_, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
-    const isCurrent = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     const rec = income
       .filter((i) => {
         if (!i.reference_month) return i.recurring;
