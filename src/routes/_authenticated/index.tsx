@@ -56,10 +56,18 @@ function Dashboard() {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
     const isCurrent = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     const rec = income
-      .filter((i) => (i.recurring ? true : sameMonth(i.reference_month, d)))
+      .filter((i) => {
+        if (!i.reference_month) return i.recurring;
+        const reference = parseLocalDate(i.reference_month);
+        return i.recurring ? reference.getTime() <= d.getTime() : sameMonth(i.reference_month, d);
+      })
       .reduce((s, i) => s + Number(i.amount), 0);
     const desp = expenses
-      .filter((e) => e.category === "fixa" || e.category === "parcelada" || isCurrent)
+      .filter((e) => {
+        const due = parseLocalDate(e.due_date);
+        const recurring = e.category === "fixa" || e.category === "parcelada";
+        return recurring ? due.getTime() <= d.getTime() : sameMonth(e.due_date, d) || isCurrent;
+      })
       .reduce((s, e) => s + Number(e.amount), 0);
     return { m: shortMonth(d), Receitas: rec, Despesas: desp };
   });

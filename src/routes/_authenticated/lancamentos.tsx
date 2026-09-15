@@ -85,7 +85,11 @@ function Lancamentos() {
 
     const list: Row[] = [
       ...income
-        .filter((i) => i.recurring || inMonth(i.reference_month))
+        .filter((i) => {
+          if (!i.reference_month) return i.recurring;
+          const reference = parseLocalDate(i.reference_month);
+          return i.recurring ? reference.getTime() <= cursor.getTime() : inMonth(i.reference_month);
+        })
         .map((i) => ({
           id: i.id,
           table: "income" as const,
@@ -101,7 +105,8 @@ function Lancamentos() {
       ...expenses
         .filter((e) => {
           const recurring = e.category === "fixa" || e.category === "parcelada";
-          return recurring || inMonth(e.due_date);
+          const due = parseLocalDate(e.due_date);
+          return recurring ? due.getTime() <= cursor.getTime() : inMonth(e.due_date);
         })
         .map((e) => ({
         id: e.id,
@@ -138,7 +143,7 @@ function Lancamentos() {
         (kind === "recorrentes" ? r.recurrent : !r.recurrent) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, transactions, filter, ownerFilter, kind, q, year, month]);
+  }, [income, expenses, transactions, filter, ownerFilter, kind, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);

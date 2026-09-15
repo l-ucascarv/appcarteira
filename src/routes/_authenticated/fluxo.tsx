@@ -98,6 +98,8 @@ function Fluxo() {
     for (const i of income) {
       if (i.status !== "previsto") continue;
       const ref = i.reference_month ? parseLocalDate(i.reference_month) : null;
+      const selectedMonth = new Date(year, month, 1).getTime();
+      if (ref && i.recurring && new Date(ref.getFullYear(), ref.getMonth(), 1).getTime() > selectedMonth) continue;
       if (ref && (ref.getFullYear() !== year || ref.getMonth() !== month) && !i.recurring) continue;
       const day = ref && ref.getFullYear() === year && ref.getMonth() === month ? ref.getDate() : 5;
       push(inByDay, day, {
@@ -114,6 +116,7 @@ function Fluxo() {
       if (e.status === "pago") continue;
       const recurring = e.category === "fixa" || e.category === "parcelada";
       const dueDate = parseLocalDate(e.due_date);
+      if (recurring && new Date(dueDate.getFullYear(), dueDate.getMonth(), 1).getTime() > new Date(year, month, 1).getTime()) continue;
       if (!recurring && (dueDate.getFullYear() !== year || dueDate.getMonth() !== month)) continue;
       push(outByDay, recurring ? e.due_day : dueDate.getDate(), {
         id: e.id,

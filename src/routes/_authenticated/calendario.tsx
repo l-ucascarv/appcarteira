@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { PayExpenseDialog } from "@/components/PayExpenseDialog";
+import { parseLocalDate } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({ meta: [{ title: "Calendário — Meu Caixa" }] }),
@@ -28,8 +29,14 @@ function Calendario() {
 
   const byDay = new Map<number, typeof expenses>();
   expenses.forEach((e) => {
-    if (!byDay.has(e.due_day)) byDay.set(e.due_day, []);
-    byDay.get(e.due_day)!.push(e);
+    const due = parseLocalDate(e.due_date);
+    const recurring = e.category === "fixa" || e.category === "parcelada";
+    const startsByThisMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime() <= new Date(y, m, 1).getTime();
+    const belongsToMonth = due.getFullYear() === y && due.getMonth() === m;
+    if ((!recurring && !belongsToMonth) || (recurring && !startsByThisMonth)) return;
+    const entries = byDay.get(e.due_day) ?? [];
+    entries.push(e);
+    byDay.set(e.due_day, entries);
   });
 
   const statusColor = (day: number) => {
