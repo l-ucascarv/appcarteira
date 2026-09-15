@@ -46,6 +46,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string
+          due_date: string
           due_day: number
           id: string
           installment_current: number | null
@@ -60,6 +61,7 @@ export type Database = {
           amount: number
           category?: string
           created_at?: string
+          due_date?: string
           due_day: number
           id?: string
           installment_current?: number | null
@@ -74,6 +76,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          due_date?: string
           due_day?: number
           id?: string
           installment_current?: number | null
