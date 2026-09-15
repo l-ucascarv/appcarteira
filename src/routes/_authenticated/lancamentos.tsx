@@ -10,6 +10,7 @@ import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { Plus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
+import { parseLocalDate } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
@@ -78,7 +79,7 @@ function Lancamentos() {
   const rows = useMemo<Row[]>(() => {
     const inMonth = (iso: string | null) => {
       if (!iso) return false;
-      const d = new Date(iso);
+      const d = parseLocalDate(iso);
       return d.getFullYear() === year && d.getMonth() === month;
     };
 
@@ -97,7 +98,12 @@ function Lancamentos() {
           owner: (i as { owner?: string }).owner ?? "ele",
           recurrent: Boolean(i.recurring),
         })),
-      ...expenses.map((e) => ({
+      ...expenses
+        .filter((e) => {
+          const recurring = e.category === "fixa" || e.category === "parcelada";
+          return recurring || inMonth(e.due_date);
+        })
+        .map((e) => ({
         id: e.id,
         table: "expenses" as const,
         type: "saida" as const,
@@ -105,10 +111,10 @@ function Lancamentos() {
         category: e.category,
         amount: Number(e.amount),
         status: e.status,
-        when: `dia ${e.due_day}`,
+        when: parseLocalDate(e.due_date).toLocaleDateString("pt-BR"),
         owner: (e as { owner?: string }).owner ?? "ele",
         recurrent: e.category === "fixa" || e.category === "parcelada",
-      })),
+        })),
       ...transactions
         .filter((t) => t.kind !== "reserva" && inMonth(t.occurred_at as string))
         .map((t) => ({

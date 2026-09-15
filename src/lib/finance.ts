@@ -17,6 +17,7 @@ export type Expense = {
   name: string;
   amount: number;
   due_day: number;
+  due_date: string;
   category: string;
   status: "pendente" | "pago" | "atrasado";
   installment_current: number | null;
@@ -34,6 +35,23 @@ export type Reserve = {
 };
 
 export type Account = { id: string; name: string; balance: number };
+
+export type Transaction = {
+  amount: number;
+  kind: string;
+  occurred_at: string;
+};
+
+export function realizedBalance(transactions: Transaction[]): number {
+  return transactions
+    .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
+    .reduce((total, transaction) => total + Number(transaction.amount), 0);
+}
+
+export function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
 
 export type Balances = {
   saldoConta: number;

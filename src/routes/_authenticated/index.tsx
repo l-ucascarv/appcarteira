@@ -7,7 +7,7 @@ import {
   useProfile,
   useTransactions,
 } from "@/lib/queries";
-import { computeBalances, monthIncomeExpected, nextBill } from "@/lib/finance";
+import { computeBalances, monthIncomeExpected, nextBill, parseLocalDate, realizedBalance } from "@/lib/finance";
 import { brl, greet, shortMonth } from "@/lib/format";
 import { KpiCard } from "@/components/KpiCard";
 import { Card } from "@/components/ui/card";
@@ -30,7 +30,12 @@ function Dashboard() {
   const { data: income = [] } = useIncome();
   const { data: transactions = [] } = useTransactions();
 
-  const balances = computeBalances(accounts, reserves, expenses);
+  const accountBalance = realizedBalance(transactions);
+  const balances = computeBalances(
+    accounts.length > 0 ? accounts.map((account, index) => ({ ...account, balance: index === 0 ? accountBalance : 0 })) : [],
+    reserves,
+    expenses,
+  );
   const monthReceita = monthIncomeExpected(income);
   const monthDespesa = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const emergencia = reserves.find((r) => r.name.toLowerCase().includes("emerg"));
@@ -44,7 +49,7 @@ function Dashboard() {
   const now = new Date();
   const sameMonth = (iso: string | null | undefined, d: Date) => {
     if (!iso) return false;
-    const x = new Date(iso);
+    const x = parseLocalDate(iso);
     return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth();
   };
   const monthsChart = Array.from({ length: 6 }, (_, idx) => {
