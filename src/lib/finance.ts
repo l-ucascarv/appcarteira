@@ -95,10 +95,14 @@ export function nextBill(expenses: Expense[], today = new Date()): Expense | nul
   if (!expenses.length) return null;
   const day = today.getDate();
   const upcoming = [...expenses]
-    .filter((e) => e.status !== "pago" && parseLocalDate(e.due_date).getTime() >= new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime())
+    .filter((e) => {
+      if (e.status === "pago") return false;
+      const recurring = e.category === "fixa" || e.category === "parcelada";
+      return recurring || parseLocalDate(e.due_date).getTime() >= new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    })
     .sort((a, b) => {
-      const da = parseLocalDate(a.due_date).getTime();
-      const db = parseLocalDate(b.due_date).getTime();
+      const da = a.due_day >= day ? a.due_day - day : a.due_day + 31;
+      const db = b.due_day >= day ? b.due_day - day : b.due_day + 31;
       return da - db;
     });
   return upcoming[0] ?? null;

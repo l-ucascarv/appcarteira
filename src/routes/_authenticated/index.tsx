@@ -70,14 +70,16 @@ function Dashboard() {
       .filter((i) => {
         if (!i.reference_month) return i.recurring;
         const reference = parseLocalDate(i.reference_month);
-        return i.recurring ? reference.getTime() <= d.getTime() : sameMonth(i.reference_month, d);
+        const referenceMonth = new Date(reference.getFullYear(), reference.getMonth(), 1).getTime();
+        return i.recurring ? referenceMonth <= d.getTime() : sameMonth(i.reference_month, d);
       })
       .reduce((s, i) => s + Number(i.amount), 0);
     const desp = expenses
       .filter((e) => {
         const due = parseLocalDate(e.due_date);
         const recurring = e.category === "fixa" || e.category === "parcelada";
-        return recurring ? due.getTime() <= d.getTime() : sameMonth(e.due_date, d) || isCurrent;
+        const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
+        return recurring ? dueMonth <= d.getTime() : sameMonth(e.due_date, d);
       })
       .reduce((s, e) => s + Number(e.amount), 0);
     return { m: shortMonth(d), Receitas: rec, Despesas: desp };

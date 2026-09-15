@@ -88,7 +88,8 @@ function Lancamentos() {
         .filter((i) => {
           if (!i.reference_month) return i.recurring;
           const reference = parseLocalDate(i.reference_month);
-          return i.recurring ? reference.getTime() <= cursor.getTime() : inMonth(i.reference_month);
+          const referenceMonth = new Date(reference.getFullYear(), reference.getMonth(), 1).getTime();
+          return i.recurring ? referenceMonth <= cursor.getTime() : inMonth(i.reference_month);
         })
         .map((i) => ({
           id: i.id,
@@ -106,7 +107,8 @@ function Lancamentos() {
         .filter((e) => {
           const recurring = e.category === "fixa" || e.category === "parcelada";
           const due = parseLocalDate(e.due_date);
-          return recurring ? due.getTime() <= cursor.getTime() : inMonth(e.due_date);
+          const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
+          return recurring ? dueMonth <= cursor.getTime() : inMonth(e.due_date);
         })
         .map((e) => ({
         id: e.id,
