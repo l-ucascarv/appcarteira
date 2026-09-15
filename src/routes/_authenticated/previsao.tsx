@@ -1,26 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useAccounts, useIncome, useExpenses } from "@/lib/queries";
+import { useIncome, useExpenses, useTransactions } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import { forecast, monthIncomeExpected } from "@/lib/finance";
+import { forecast, monthIncomeExpected, realizedBalance } from "@/lib/finance";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/previsao")({
-  head: () => ({ meta: [{ title: "Previsão — Meu Caixa" }] }),
+  head: () => ({
+    meta: [
+      { title: "Previsão financeira — Meu Caixa" },
+      { name: "description", content: "Visualize a projeção futura com saldo realizado e lançamentos previstos." },
+      { property: "og:title", content: "Previsão financeira — Meu Caixa" },
+      { property: "og:description", content: "Visualize a projeção futura com saldo realizado e lançamentos previstos." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Previsao,
 });
 
 const RANGES = [30, 60, 90, 180, 365];
 
 function Previsao() {
-  const { data: accounts = [] } = useAccounts();
   const { data: income = [] } = useIncome();
   const { data: expenses = [] } = useExpenses();
+  const { data: transactions = [] } = useTransactions();
   const [days, setDays] = useState(90);
 
-  const balance = accounts.reduce((s, a) => s + Number(a.balance), 0);
+  const balance = realizedBalance(transactions);
   const monthly = monthIncomeExpected(income);
   const monthlyExp = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const data = forecast(balance, monthly, monthlyExp, days);

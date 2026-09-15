@@ -8,7 +8,16 @@ import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 import { parseLocalDate } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
-  head: () => ({ meta: [{ title: "Calendário — Meu Caixa" }] }),
+  head: () => ({
+    meta: [
+      { title: "Calendário financeiro — Meu Caixa" },
+      { name: "description", content: "Consulte vencimentos e pagamentos no calendário financeiro." },
+      { property: "og:title", content: "Calendário financeiro — Meu Caixa" },
+      { property: "og:description", content: "Consulte vencimentos e pagamentos no calendário financeiro." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Calendario,
 });
 

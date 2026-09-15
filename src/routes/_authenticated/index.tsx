@@ -18,7 +18,16 @@ import {
 import { CircleDollarSign, PiggyBank, ShieldCheck, Wallet, TrendingUp, TrendingDown, Sparkles, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Dashboard — Meu Caixa" }] }),
+  head: () => ({
+    meta: [
+      { title: "Visão geral — Meu Caixa" },
+      { name: "description", content: "Acompanhe seu saldo realizado, receitas, despesas e reservas." },
+      { property: "og:title", content: "Visão geral — Meu Caixa" },
+      { property: "og:description", content: "Acompanhe seu saldo realizado, receitas, despesas e reservas." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Dashboard,
 });
 
@@ -32,7 +41,9 @@ function Dashboard() {
 
   const accountBalance = realizedBalance(transactions);
   const balances = computeBalances(
-    accounts.length > 0 ? accounts.map((account, index) => ({ ...account, balance: index === 0 ? accountBalance : 0 })) : [],
+    accounts.length > 0
+      ? accounts.map((account, index) => ({ ...account, balance: index === 0 ? accountBalance : 0 }))
+      : [{ id: "calculated", name: "Saldo realizado", balance: accountBalance }],
     reserves,
     expenses,
   );

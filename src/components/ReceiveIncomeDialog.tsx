@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import { distribute } from "@/lib/finance";
-import { useAccounts, useReserves, useExpenses, useReceiveIncome } from "@/lib/queries";
+import { distribute, realizedBalance } from "@/lib/finance";
+import { useAccounts, useReserves, useExpenses, useReceiveIncome, useTransactions } from "@/lib/queries";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 
@@ -23,6 +23,7 @@ export function ReceiveIncomeDialog({
   const { data: accounts = [] } = useAccounts();
   const { data: reserves = [] } = useReserves();
   const { data: expenses = [] } = useExpenses();
+  const { data: transactions = [] } = useTransactions();
   const mutation = useReceiveIncome();
   const [applied, setApplied] = useState(false);
 
@@ -41,7 +42,7 @@ export function ReceiveIncomeDialog({
         amount,
         description,
         accountId: account.id,
-        accountBalance: Number(account.balance),
+        accountBalance: realizedBalance(transactions),
         distribution: plan.map((p) => ({ reserveId: p.reserveId as string, value: p.value })),
       });
       setApplied(true);
