@@ -7,7 +7,7 @@ import {
   useProfile,
   useTransactions,
 } from "@/lib/queries";
-import { computeBalances, monthIncomeExpected, nextBill } from "@/lib/finance";
+import { computeBalances, monthIncomeExpected, nextBill, parseLocalDate, realizedBalance } from "@/lib/finance";
 import { brl, greet, shortMonth } from "@/lib/format";
 import { KpiCard } from "@/components/KpiCard";
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,16 @@ import {
 import { CircleDollarSign, PiggyBank, ShieldCheck, Wallet, TrendingUp, TrendingDown, Sparkles, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Dashboard — Meu Caixa" }] }),
+  head: () => ({
+    meta: [
+      { title: "Visão geral — Meu Caixa" },
+      { name: "description", content: "Acompanhe seu saldo realizado, receitas, despesas e reservas." },
+      { property: "og:title", content: "Visão geral — Meu Caixa" },
+      { property: "og:description", content: "Acompanhe seu saldo realizado, receitas, despesas e reservas." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Dashboard,
 });
 
@@ -30,7 +39,14 @@ function Dashboard() {
   const { data: income = [] } = useIncome();
   const { data: transactions = [] } = useTransactions();
 
-  const balances = computeBalances(accounts, reserves, expenses);
+  const accountBalance = realizedBalance(transactions);
+  const balances = computeBalances(
+    accounts.length > 0
+      ? accounts.map((account, index) => ({ ...account, balance: index === 0 ? accountBalance : 0 }))
+      : [{ id: "calculated", name: "Saldo realizado", balance: accountBalance }],
+    reserves,
+    expenses,
+  );
   const monthReceita = monthIncomeExpected(income);
   const monthDespesa = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const emergencia = reserves.find((r) => r.name.toLowerCase().includes("emerg"));
@@ -44,17 +60,26 @@ function Dashboard() {
   const now = new Date();
   const sameMonth = (iso: string | null | undefined, d: Date) => {
     if (!iso) return false;
-    const x = new Date(iso);
+    const x = parseLocalDate(iso);
     return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth();
   };
   const monthsChart = Array.from({ length: 6 }, (_, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
-    const isCurrent = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     const rec = income
-      .filter((i) => (i.recurring ? true : sameMonth(i.reference_month, d)))
+      .filter((i) => {
+        if (!i.reference_month) return i.recurring;
+        const reference = parseLocalDate(i.reference_month);
+        const referenceMonth = new Date(reference.getFullYear(), reference.getMonth(), 1).getTime();
+        return i.recurring ? referenceMonth <= d.getTime() : sameMonth(i.reference_month, d);
+      })
       .reduce((s, i) => s + Number(i.amount), 0);
     const desp = expenses
-      .filter((e) => e.category === "fixa" || e.category === "parcelada" || isCurrent)
+      .filter((e) => {
+        const due = parseLocalDate(e.due_date);
+        const recurring = e.category === "fixa" || e.category === "parcelada";
+        const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
+        return recurring ? dueMonth <= d.getTime() : sameMonth(e.due_date, d);
+      })
       .reduce((s, e) => s + Number(e.amount), 0);
     return { m: shortMonth(d), Receitas: rec, Despesas: desp };
   });

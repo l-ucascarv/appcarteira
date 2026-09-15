@@ -17,6 +17,7 @@ export type Expense = {
   name: string;
   amount: number;
   due_day: number;
+  due_date: string;
   category: string;
   status: "pendente" | "pago" | "atrasado";
   installment_current: number | null;
@@ -34,6 +35,23 @@ export type Reserve = {
 };
 
 export type Account = { id: string; name: string; balance: number };
+
+export type Transaction = {
+  amount: number;
+  kind: string;
+  occurred_at: string;
+};
+
+export function realizedBalance(transactions: Transaction[]): number {
+  return transactions
+    .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
+    .reduce((total, transaction) => total + Number(transaction.amount), 0);
+}
+
+export function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
 
 export type Balances = {
   saldoConta: number;
@@ -62,7 +80,7 @@ export function monthIncomeExpected(income: Income[], date = new Date()): number
   return income.reduce((s, i) => {
     if (i.recurring) return s + Number(i.amount);
     if (i.reference_month) {
-      const d = new Date(i.reference_month);
+      const d = parseLocalDate(i.reference_month);
       if (d.getFullYear() === y && d.getMonth() === m) return s + Number(i.amount);
     }
     return s;
@@ -77,10 +95,14 @@ export function nextBill(expenses: Expense[], today = new Date()): Expense | nul
   if (!expenses.length) return null;
   const day = today.getDate();
   const upcoming = [...expenses]
-    .filter((e) => e.status !== "pago")
+    .filter((e) => {
+      if (e.status === "pago") return false;
+      const recurring = e.category === "fixa" || e.category === "parcelada";
+      return recurring || parseLocalDate(e.due_date).getTime() >= new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    })
     .sort((a, b) => {
-      const da = a.due_day >= day ? a.due_day - day : a.due_day + 30;
-      const db = b.due_day >= day ? b.due_day - day : b.due_day + 30;
+      const da = a.due_day >= day ? a.due_day - day : a.due_day + 31;
+      const db = b.due_day >= day ? b.due_day - day : b.due_day + 31;
       return da - db;
     });
   return upcoming[0] ?? null;

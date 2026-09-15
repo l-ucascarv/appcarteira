@@ -37,6 +37,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
         name,
         amount: Number(amount),
         due_day: Number(dueDate.slice(8, 10)),
+        due_date: dueDate,
         category,
         status: "pendente",
         installment_current: instCur ? Number(instCur) : null,

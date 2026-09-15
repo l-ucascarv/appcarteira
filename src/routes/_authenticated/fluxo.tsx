@@ -10,6 +10,7 @@ import { AddIncomeDialog } from "@/components/AddIncomeDialog";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
 import { OwnerIcon } from "@/components/OwnerBadge";
+import { parseLocalDate, realizedBalance } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
   head: () => ({
@@ -60,7 +61,10 @@ function Fluxo() {
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-  const startBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
+  const monthStart = new Date(year, month, 1).getTime();
+  const startBalance = realizedBalance(
+    transactions.filter((transaction) => new Date(transaction.occurred_at as string).getTime() < monthStart),
+  );
 
   const { rows, totalIn, totalOut } = useMemo(() => {
     const inByDay: Record<number, DayEvent[]> = {};
@@ -93,7 +97,9 @@ function Fluxo() {
 
     for (const i of income) {
       if (i.status !== "previsto") continue;
-      const ref = i.reference_month ? new Date(i.reference_month) : null;
+      const ref = i.reference_month ? parseLocalDate(i.reference_month) : null;
+      const selectedMonth = new Date(year, month, 1).getTime();
+      if (ref && i.recurring && new Date(ref.getFullYear(), ref.getMonth(), 1).getTime() > selectedMonth) continue;
       if (ref && (ref.getFullYear() !== year || ref.getMonth() !== month) && !i.recurring) continue;
       const day = ref && ref.getFullYear() === year && ref.getMonth() === month ? ref.getDate() : 5;
       push(inByDay, day, {
@@ -108,7 +114,11 @@ function Fluxo() {
 
     for (const e of expenses) {
       if (e.status === "pago") continue;
-      push(outByDay, e.due_day, {
+      const recurring = e.category === "fixa" || e.category === "parcelada";
+      const dueDate = parseLocalDate(e.due_date);
+      if (recurring && new Date(dueDate.getFullYear(), dueDate.getMonth(), 1).getTime() > new Date(year, month, 1).getTime()) continue;
+      if (!recurring && (dueDate.getFullYear() !== year || dueDate.getMonth() !== month)) continue;
+      push(outByDay, recurring ? e.due_day : dueDate.getDate(), {
         id: e.id,
         kind: "despesa",
         description: e.name,

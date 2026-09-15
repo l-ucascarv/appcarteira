@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import { useAccounts, usePayExpense } from "@/lib/queries";
+import { useAccounts, usePayExpense, useTransactions } from "@/lib/queries";
 import { toast } from "sonner";
 import { CircleDollarSign } from "lucide-react";
+import { realizedBalance } from "@/lib/finance";
 
 export function PayExpenseDialog({
   open,
@@ -19,9 +20,11 @@ export function PayExpenseDialog({
   description: string;
 }) {
   const { data: accounts = [] } = useAccounts();
+  const { data: transactions = [] } = useTransactions();
   const mutation = usePayExpense();
   const account = accounts[0];
-  const newBalance = account ? Number(account.balance) - amount : 0;
+  const currentBalance = realizedBalance(transactions);
+  const newBalance = currentBalance - amount;
 
   const apply = async () => {
     if (!account) {
@@ -34,7 +37,7 @@ export function PayExpenseDialog({
         amount,
         description,
         accountId: account.id,
-        accountBalance: Number(account.balance),
+        accountBalance: currentBalance,
       });
       toast.success("Despesa paga");
       onOpenChange(false);
@@ -59,7 +62,7 @@ export function PayExpenseDialog({
           <div className="rounded-xl border p-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Saldo atual</span>
-              <span className="tabular-nums">{brl(Number(account?.balance ?? 0))}</span>
+              <span className="tabular-nums">{brl(currentBalance)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between">
               <span className="text-muted-foreground">Saldo após pagamento</span>
