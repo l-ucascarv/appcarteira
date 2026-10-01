@@ -7,7 +7,15 @@ import {
   useProfile,
   useTransactions,
 } from "@/lib/queries";
-import { computeBalances, monthIncomeExpected, nextBill, parseLocalDate, realizedBalance } from "@/lib/finance";
+import {
+  currentMonthExpenses,
+  futureFixedCommitment,
+  monthIncomeExpected,
+  nextBill,
+  parseLocalDate,
+  realizedBalance,
+  realizedOnDate,
+} from "@/lib/finance";
 import { brl, greet, shortMonth } from "@/lib/format";
 import { KpiCard } from "@/components/KpiCard";
 import { Card } from "@/components/ui/card";
@@ -40,17 +48,15 @@ function Dashboard() {
   const { data: transactions = [] } = useTransactions();
 
   const accountBalance = realizedBalance(transactions);
-  const balances = computeBalances(
-    accounts.length > 0
-      ? accounts.map((account, index) => ({ ...account, balance: index === 0 ? accountBalance : 0 }))
-      : [{ id: "calculated", name: "Saldo realizado", balance: accountBalance }],
-    reserves,
-    expenses,
-  );
+  const todayBalance = realizedOnDate(transactions);
+  const reservedBalance = reserves.reduce((sum, reserve) => sum + Number(reserve.current_amount), 0);
+  const committedBalance = futureFixedCommitment(expenses);
+  const freeBalance = accountBalance - reservedBalance - committedBalance;
   const monthReceita = monthIncomeExpected(income);
-  const monthDespesa = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const monthExpenses = currentMonthExpenses(expenses);
+  const monthDespesa = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const emergencia = reserves.find((r) => r.name.toLowerCase().includes("emerg"));
-  const patrimonio = balances.saldoConta + balances.saldoReservado;
+  const patrimonio = accountBalance + reservedBalance;
   const bill = nextBill(expenses);
   const comissaoPrevista = income
     .filter((i) => i.kind === "comissao" && i.status === "previsto")
@@ -92,6 +98,10 @@ function Dashboard() {
     .map((t, i) => ({ i, saldo: Number(t.balance_after) }));
   if (evo.length === 0) evo.push({ i: 0, saldo: patrimonio });
 
+  const recentTransactions = transactions
+    .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
+    .slice(0, 8);
+
   return (
     <div className="space-y-6">
       <div>
@@ -107,22 +117,23 @@ function Dashboard() {
       <KpiCard
         accent="primary"
         label="Disponível para gastar"
-        value={brl(balances.saldoLivre)}
-        hint="Saldo em conta − reservas − contas comprometidas"
+        value={brl(freeBalance)}
+        hint="Saldo da conta − reservas − despesas fixas futuras"
         icon={<Sparkles className="h-5 w-5" />}
       />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard label="Saldo em conta" value={brl(balances.saldoConta)} icon={<Wallet className="h-4 w-4" />} />
-        <KpiCard label="Reservado" value={brl(balances.saldoReservado)} icon={<ShieldCheck className="h-4 w-4" />} />
-        <KpiCard label="Comprometido" value={brl(balances.saldoComprometido)} icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
-        <KpiCard label="Patrimônio" value={brl(patrimonio)} icon={<PiggyBank className="h-4 w-4" />} />
+        <KpiCard label="Saldo da conta" value={brl(accountBalance)} hint="Somente realizado" icon={<Wallet className="h-4 w-4" />} />
+        <KpiCard label="Saldo do dia" value={brl(todayBalance)} hint="Movimentações de hoje" icon={<CalendarClock className="h-4 w-4" />} accent={todayBalance >= 0 ? "positive" : "negative"} />
+        <KpiCard label="Reservado" value={brl(reservedBalance)} icon={<ShieldCheck className="h-4 w-4" />} />
+        <KpiCard label="Comprometido" value={brl(committedBalance)} hint="Despesas fixas futuras" icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard label="Receita do mês" value={brl(monthReceita)} icon={<TrendingUp className="h-4 w-4" />} accent="positive" />
+        <KpiCard label="Receitas do mês" value={brl(monthReceita)} icon={<TrendingUp className="h-4 w-4" />} accent="positive" />
         <KpiCard label="Despesas do mês" value={brl(monthDespesa)} icon={<TrendingDown className="h-4 w-4" />} accent="negative" />
+        <KpiCard label="Patrimônio" value={brl(patrimonio)} icon={<PiggyBank className="h-4 w-4" />} />
         <KpiCard label="Comissão prevista" value={brl(comissaoPrevista)} icon={<Sparkles className="h-4 w-4" />} />
         <KpiCard
           label="Próxima conta"
@@ -131,6 +142,39 @@ function Dashboard() {
           icon={<CalendarClock className="h-4 w-4" />}
         />
       </div>
+
+      <Card className="overflow-hidden rounded-2xl p-0 shadow-none">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <h2 className="text-sm font-semibold">Últimos lançamentos realizados</h2>
+            <p className="text-xs text-muted-foreground">Movimentações que formam o saldo da conta.</p>
+          </div>
+          <span className="text-xs text-muted-foreground">{recentTransactions.length}</span>
+        </div>
+        {recentTransactions.length === 0 ? (
+          <div className="px-4 py-10 text-center text-sm text-muted-foreground">Nenhuma movimentação realizada.</div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {recentTransactions.map((transaction) => {
+              const amount = Number(transaction.amount);
+              return (
+                <li key={transaction.id as string} className="flex items-center gap-3 px-4 py-3">
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${amount >= 0 ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>
+                    {amount >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{transaction.description as string}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(transaction.occurred_at as string).toLocaleDateString("pt-BR")}</div>
+                  </div>
+                  <span className={`text-sm font-semibold tabular-nums ${amount >= 0 ? "text-success" : "text-danger"}`}>
+                    {amount >= 0 ? "+" : "−"}{brl(Math.abs(amount))}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
 
       {/* Barra da Reserva */}
       {emergencia && (
