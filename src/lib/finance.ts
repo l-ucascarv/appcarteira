@@ -48,6 +48,18 @@ export function realizedBalance(transactions: Transaction[]): number {
     .reduce((total, transaction) => total + Number(transaction.amount), 0);
 }
 
+export function realizedOnDate(transactions: Transaction[], date = new Date()): number {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
+  return transactions
+    .filter((transaction) => {
+      const occurredAt = new Date(transaction.occurred_at).getTime();
+      return occurredAt >= start && occurredAt < end &&
+        (transaction.kind === "receita" || transaction.kind === "despesa");
+    })
+    .reduce((total, transaction) => total + Number(transaction.amount), 0);
+}
+
 export function parseLocalDate(value: string): Date {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -72,6 +84,27 @@ export function computeBalances(
     .reduce((s, e) => s + Number(e.amount), 0);
   const saldoLivre = Math.max(0, saldoConta - saldoReservado - saldoComprometido);
   return { saldoConta, saldoReservado, saldoComprometido, saldoLivre };
+}
+
+export function currentMonthExpenses(expenses: Expense[], date = new Date()): Expense[] {
+  const selectedMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
+  return expenses.filter((expense) => {
+    const due = parseLocalDate(expense.due_date);
+    const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
+    const recurring = expense.category === "fixa" || expense.category === "parcelada";
+    return recurring ? dueMonth <= selectedMonth : dueMonth === selectedMonth;
+  });
+}
+
+export function futureFixedCommitment(expenses: Expense[], date = new Date()): number {
+  const today = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return currentMonthExpenses(expenses, date)
+    .filter((expense) => {
+      if (expense.category !== "fixa" || expense.status === "pago") return false;
+      const occurrence = new Date(date.getFullYear(), date.getMonth(), expense.due_day).getTime();
+      return occurrence >= today;
+    })
+    .reduce((total, expense) => total + Number(expense.amount), 0);
 }
 
 export function monthIncomeExpected(income: Income[], date = new Date()): number {

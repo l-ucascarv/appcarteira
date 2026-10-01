@@ -9,22 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedReservasRouteImport } from './routes/_authenticated/reservas'
-import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
-import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
-import { Route as AuthenticatedFluxoRouteImport } from './routes/_authenticated/fluxo'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedFluxoRouteImport } from './routes/_authenticated/fluxo'
+import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
+import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
+import { Route as AuthenticatedReservasRouteImport } from './routes/_authenticated/reservas'
 
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -32,14 +32,14 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReservasRoute = AuthenticatedReservasRouteImport.update({
-  id: '/reservas',
-  path: '/reservas',
+const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
-  id: '/previsao',
-  path: '/previsao',
+const AuthenticatedFluxoRoute = AuthenticatedFluxoRouteImport.update({
+  id: '/fluxo',
+  path: '/fluxo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLancamentosRoute =
@@ -48,14 +48,14 @@ const AuthenticatedLancamentosRoute =
     path: '/lancamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedFluxoRoute = AuthenticatedFluxoRouteImport.update({
-  id: '/fluxo',
-  path: '/fluxo',
+const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
+  id: '/previsao',
+  path: '/previsao',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
-  id: '/calendario',
-  path: '/calendario',
+const AuthenticatedReservasRoute = AuthenticatedReservasRouteImport.update({
+  id: '/reservas',
+  path: '/reservas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
@@ -126,18 +126,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -147,25 +147,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reservas': {
-      id: '/_authenticated/reservas'
-      path: '/reservas'
-      fullPath: '/reservas'
-      preLoaderRoute: typeof AuthenticatedReservasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/previsao': {
-      id: '/_authenticated/previsao'
-      path: '/previsao'
-      fullPath: '/previsao'
-      preLoaderRoute: typeof AuthenticatedPrevisaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/lancamentos': {
-      id: '/_authenticated/lancamentos'
-      path: '/lancamentos'
-      fullPath: '/lancamentos'
-      preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
+    '/_authenticated/calendario': {
+      id: '/_authenticated/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/fluxo': {
@@ -175,11 +161,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFluxoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/calendario': {
-      id: '/_authenticated/calendario'
-      path: '/calendario'
-      fullPath: '/calendario'
-      preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
+    '/_authenticated/lancamentos': {
+      id: '/_authenticated/lancamentos'
+      path: '/lancamentos'
+      fullPath: '/lancamentos'
+      preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/previsao': {
+      id: '/_authenticated/previsao'
+      path: '/previsao'
+      fullPath: '/previsao'
+      preLoaderRoute: typeof AuthenticatedPrevisaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reservas': {
+      id: '/_authenticated/reservas'
+      path: '/reservas'
+      fullPath: '/reservas'
+      preLoaderRoute: typeof AuthenticatedReservasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
