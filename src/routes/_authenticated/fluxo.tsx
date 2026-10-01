@@ -4,8 +4,6 @@ import { useIncome, useExpenses, useTransactions, useAccounts } from "@/lib/quer
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import { ReceiveIncomeDialog } from "@/components/ReceiveIncomeDialog";
-import { PayExpenseDialog } from "@/components/PayExpenseDialog";
 import { AddIncomeDialog } from "@/components/AddIncomeDialog";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
@@ -50,8 +48,6 @@ function Fluxo() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [view, setView] = useState<View>("entradas");
-  const [receiveOpen, setReceiveOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
-  const [payOpen, setPayOpen] = useState<{ id: string; amount: number; name: string } | null>(null);
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
 
@@ -107,7 +103,7 @@ function Fluxo() {
         kind: "receita",
         description: i.name,
         amount: Number(i.amount),
-        actionable: isCurrentMonth,
+        actionable: false,
         owner: (i as { owner?: string }).owner ?? "ele",
       });
     }
@@ -123,7 +119,7 @@ function Fluxo() {
         kind: "despesa",
         description: e.name,
         amount: Number(e.amount),
-        actionable: isCurrentMonth,
+        actionable: false,
         owner: (e as { owner?: string }).owner ?? "ele",
       });
     }
@@ -139,7 +135,9 @@ function Fluxo() {
       const sumOut = outs.reduce((s, e) => s + e.amount, 0);
       totalIn += sumIn;
       totalOut += sumOut;
-      running += sumIn - sumOut;
+      const realizedIn = ins.filter((event) => !event.actionable).reduce((sum, event) => sum + event.amount, 0);
+      const realizedOut = outs.filter((event) => !event.actionable).reduce((sum, event) => sum + event.amount, 0);
+      running += realizedIn - realizedOut;
       return {
         day,
         events: view === "entradas" ? ins : outs,
@@ -248,20 +246,6 @@ function Fluxo() {
                           {ev.kind === "receita" ? "+" : "−"}
                           {brl(ev.amount)}
                         </span>
-                        {ev.actionable && (
-                          <Button
-                            size="sm"
-                            variant={ev.kind === "receita" ? "default" : "outline"}
-                            className="ml-auto h-6 shrink-0 rounded-full px-2 text-[11px]"
-                            onClick={() =>
-                              ev.kind === "receita"
-                                ? setReceiveOpen({ id: ev.id, amount: ev.amount, name: ev.description })
-                                : setPayOpen({ id: ev.id, amount: ev.amount, name: ev.description })
-                            }
-                          >
-                            {ev.kind === "receita" ? "Receber" : "Pagar"}
-                          </Button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -283,24 +267,6 @@ function Fluxo() {
         </ul>
       </Card>
 
-      {receiveOpen && (
-        <ReceiveIncomeDialog
-          open={!!receiveOpen}
-          onOpenChange={(v) => !v && setReceiveOpen(null)}
-          incomeId={receiveOpen.id}
-          amount={receiveOpen.amount}
-          description={receiveOpen.name}
-        />
-      )}
-      {payOpen && (
-        <PayExpenseDialog
-          open={!!payOpen}
-          onOpenChange={(v) => !v && setPayOpen(null)}
-          expenseId={payOpen.id}
-          amount={payOpen.amount}
-          description={payOpen.name}
-        />
-      )}
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
       <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
     </div>

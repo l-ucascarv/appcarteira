@@ -1,9 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Wallet,
-  Sigma,
   Tags,
-  Menu as MenuIcon,
   PlusCircle,
   CalendarClock,
   BarChart3,
@@ -19,9 +17,7 @@ import type { ReactNode } from "react";
 
 const NAV = [
   { to: "/", label: "saldos", icon: Wallet },
-  { to: "/previsao", label: "totais", icon: Sigma },
   { to: "/lancamentos", label: "tags", icon: Tags },
-  { to: "/reservas", label: "menu", icon: MenuIcon },
 ] as const;
 
 const ACTIONS = [
