@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
+import { useIncome, useExpenses, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,10 @@ import { parseLocalDate } from "@/lib/finance";
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
     meta: [
-      { title: "Lançamentos — Meu Caixa" },
-      { name: "description", content: "Visão completa de todas as entradas e saídas lançadas, com categoria, descrição e valor." },
-      { property: "og:title", content: "Lançamentos — Meu Caixa" },
-      { property: "og:description", content: "Visão completa de todas as entradas e saídas lançadas, com categoria, descrição e valor." },
+      { title: "Tags e categorias — Meu Caixa" },
+      { name: "description", content: "Receitas e gastos separados por categoria de lançamento." },
+      { property: "og:title", content: "Tags e categorias — Meu Caixa" },
+      { property: "og:description", content: "Receitas e gastos separados por categoria de lançamento." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -58,7 +58,6 @@ type Kind = "variaveis" | "recorrentes";
 function Lancamentos() {
   const { data: income = [] } = useIncome();
   const { data: expenses = [] } = useExpenses();
-  const { data: transactions = [] } = useTransactions();
   const del = useDeleteEntry();
   const delAll = useDeleteAllEntries();
 
@@ -122,20 +121,6 @@ function Lancamentos() {
         owner: (e as { owner?: string }).owner ?? "ele",
         recurrent: e.category === "fixa" || e.category === "parcelada",
         })),
-      ...transactions
-        .filter((t) => t.kind !== "reserva" && inMonth(t.occurred_at as string))
-        .map((t) => ({
-          id: t.id as string,
-          table: "transactions" as const,
-          type: (Number(t.amount) >= 0 ? "entrada" : "saida") as "entrada" | "saida",
-          description: t.description as string,
-          category: "movimentacao",
-          amount: Math.abs(Number(t.amount)),
-          status: "realizado",
-          when: new Date(t.occurred_at as string).toLocaleDateString("pt-BR"),
-          owner: (t as { owner?: string }).owner ?? "ele",
-          recurrent: false,
-        })),
     ];
     const term = q.trim().toLowerCase();
     return list.filter(
@@ -145,10 +130,20 @@ function Lancamentos() {
         (kind === "recorrentes" ? r.recurrent : !r.recurrent) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, transactions, filter, ownerFilter, kind, q, year, month, cursor]);
+  }, [income, expenses, filter, ownerFilter, kind, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
+  const groupedRows = useMemo(() => {
+    const group = (type: "entrada" | "saida") =>
+      Object.entries(
+        rows.filter((row) => row.type === type).reduce<Record<string, Row[]>>((groups, row) => {
+          (groups[row.category] ??= []).push(row);
+          return groups;
+        }, {}),
+      ).sort(([a], [b]) => a.localeCompare(b));
+    return { entradas: group("entrada"), saidas: group("saida") };
+  }, [rows]);
 
   const remove = (r: Row) =>
     del.mutate(
@@ -168,8 +163,8 @@ function Lancamentos() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Lançamentos</h1>
-          <p className="text-sm text-muted-foreground">Tudo o que foi lançado, com categoria e descrição.</p>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Tags</h1>
+          <p className="text-sm text-muted-foreground">Receitas e gastos organizados por categoria.</p>
         </div>
         <Button variant="ghost" size="sm" className="rounded-full text-danger" onClick={removeAll} disabled={delAll.isPending}>
           <Trash2 className="mr-1 h-4 w-4" /> Limpar tudo
@@ -265,44 +260,50 @@ function Lancamentos() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl p-0 shadow-none">
-        <ul className="divide-y divide-border">
-          {rows.length === 0 && (
-            <li className="px-4 py-10 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</li>
-          )}
-          {rows.map((r) => (
-            <li key={`${r.table}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
-              <OwnerIcon owner={r.owner} />
-              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${CAT_DOT[r.category] ?? "bg-muted-foreground"}`} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{r.description}</div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span className="rounded-full bg-muted px-2 py-0.5 capitalize">{r.category}</span>
-                  <span className="capitalize">{r.status}</span>
-                  <span>· {r.when}</span>
+      {rows.length === 0 && (
+        <Card className="p-10 text-center text-sm text-muted-foreground shadow-none">Nenhum lançamento encontrado.</Card>
+      )}
+      {([
+        ["Receitas", groupedRows.entradas, "text-success"],
+        ["Gastos", groupedRows.saidas, "text-danger"],
+      ] as const).map(([title, groups, tone]) => groups.length > 0 && (
+        <section key={title} className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className={`text-sm font-semibold ${tone}`}>{title}</h2>
+            <span className="text-xs text-muted-foreground">{groups.length} categorias</span>
+          </div>
+          {groups.map(([category, entries]) => (
+            <Card key={`${title}-${category}`} className="overflow-hidden p-0 shadow-none">
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-semibold capitalize">
+                  <span className={`h-2.5 w-2.5 rounded-full ${CAT_DOT[category] ?? "bg-muted-foreground"}`} />
+                  {category}
                 </div>
+                <span className={`text-sm font-semibold tabular-nums ${tone}`}>
+                  {brl(entries.reduce((sum, entry) => sum + entry.amount, 0))}
+                </span>
               </div>
-              <span
-                className={`shrink-0 text-sm font-semibold tabular-nums ${
-                  r.type === "entrada" ? "text-success" : "text-danger"
-                }`}
-              >
-                {r.type === "entrada" ? "+" : "−"}
-                {brl(r.amount)}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger"
-                aria-label={`Excluir ${r.description}`}
-                onClick={() => remove(r)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </li>
+              <ul className="divide-y divide-border">
+                {entries.map((r) => (
+                  <li key={`${r.table}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
+                    <OwnerIcon owner={r.owner} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{r.description}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground capitalize">{r.status} · {r.when}</div>
+                    </div>
+                    <span className={`shrink-0 text-sm font-semibold tabular-nums ${tone}`}>
+                      {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger" aria-label={`Excluir ${r.description}`} onClick={() => remove(r)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
           ))}
-        </ul>
-      </Card>
+        </section>
+      ))}
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
       <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />

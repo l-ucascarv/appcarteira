@@ -31,7 +31,7 @@ type DayEvent = {
   kind: "receita" | "despesa";
   description: string;
   amount: number; // sempre positivo
-  actionable: boolean;
+  realized: boolean;
   owner: string;
 };
 
@@ -85,7 +85,7 @@ function Fluxo() {
         kind: amt >= 0 ? "receita" : "despesa",
         description: t.description as string,
         amount: Math.abs(amt),
-        actionable: false,
+        realized: true,
         owner: (t as { owner?: string }).owner ?? "ele",
       };
       push(amt >= 0 ? inByDay : outByDay, day, ev);
@@ -103,7 +103,7 @@ function Fluxo() {
         kind: "receita",
         description: i.name,
         amount: Number(i.amount),
-        actionable: false,
+        realized: false,
         owner: (i as { owner?: string }).owner ?? "ele",
       });
     }
@@ -119,7 +119,7 @@ function Fluxo() {
         kind: "despesa",
         description: e.name,
         amount: Number(e.amount),
-        actionable: false,
+        realized: false,
         owner: (e as { owner?: string }).owner ?? "ele",
       });
     }
@@ -135,8 +135,8 @@ function Fluxo() {
       const sumOut = outs.reduce((s, e) => s + e.amount, 0);
       totalIn += sumIn;
       totalOut += sumOut;
-      const realizedIn = ins.filter((event) => !event.actionable).reduce((sum, event) => sum + event.amount, 0);
-      const realizedOut = outs.filter((event) => !event.actionable).reduce((sum, event) => sum + event.amount, 0);
+      const realizedIn = ins.filter((event) => event.realized).reduce((sum, event) => sum + event.amount, 0);
+      const realizedOut = outs.filter((event) => event.realized).reduce((sum, event) => sum + event.amount, 0);
       running += realizedIn - realizedOut;
       return {
         day,
