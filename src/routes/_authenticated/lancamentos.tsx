@@ -36,6 +36,7 @@ type Row = {
   status: string;
   when: string;
   owner: string;
+  classification?: "fixa" | "variavel";
   source: EditableIncome | EditableExpense;
 };
 
@@ -70,6 +71,7 @@ function Lancamentos() {
   const [editIncome, setEditIncome] = useState<EditableIncome | null>(null);
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
+  const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
 
@@ -117,6 +119,7 @@ function Lancamentos() {
         status: e.status,
         when: parseLocalDate(e.due_date).toLocaleDateString("pt-BR"),
         owner: (e as { owner?: string }).owner ?? "ele",
+        classification: (e.category === "fixa" ? "fixa" : "variavel") as "fixa" | "variavel",
         source: e as unknown as EditableExpense,
         })),
     ];
@@ -124,9 +127,13 @@ function Lancamentos() {
     return list.filter(
       (r) =>
         (ownerFilter === "todos" || r.owner === ownerFilter) &&
-        (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
+        (classFilter === "todas" || r.classification === classFilter) &&
+        (!term ||
+          r.description.toLowerCase().includes(term) ||
+          r.category.toLowerCase().includes(term) ||
+          (r.classification === "fixa" ? "fixa" : r.classification ? "variável variavel" : "").includes(term)),
     );
-  }, [income, expenses, ownerFilter, q, year, month, cursor]);
+  }, [income, expenses, ownerFilter, classFilter, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -214,9 +221,21 @@ function Lancamentos() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por descrição ou categoria"
+          placeholder="Buscar por nome, categoria ou fixa/variável"
           className="rounded-full pl-9"
         />
+      </div>
+
+      <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+        {([["todas", "Todas"], ["fixa", "Fixas"], ["variavel", "Variáveis"]] as const).map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setClassFilter(value)}
+            className={`rounded-full py-1.5 text-sm font-medium transition-colors ${classFilter === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="flex gap-2">
@@ -258,6 +277,11 @@ function Lancamentos() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{r.description}</div>
                       <div className="mt-0.5 text-[11px] text-muted-foreground capitalize">{r.status} · {r.when}</div>
+                      {r.classification && (
+                        <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${r.classification === "fixa" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                          {r.classification === "fixa" ? "Fixa" : "Variável"}
+                        </span>
+                      )}
                     </div>
                     <span className={`shrink-0 text-sm font-semibold tabular-nums ${tone}`}>
                       {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
