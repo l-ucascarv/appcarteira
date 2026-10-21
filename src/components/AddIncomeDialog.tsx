@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,9 @@ import { EntryAiTools } from "@/components/EntryAiTools";
 
 const KINDS = ["salario", "plantao", "comissao", "extra"] as const;
 
-export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export type EditableIncome = { id: string; name: string; amount: number | string; reference_month: string | null; kind: string; category_label?: string | null; recurring?: boolean | null; owner?: string | null; status: string };
+
+export function AddIncomeDialog({ open, onOpenChange, entry }: { open: boolean; onOpenChange: (v: boolean) => void; entry?: EditableIncome | null }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -27,19 +29,31 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const [realized, setRealized] = useState(true);
   const today = new Date().toLocaleDateString("en-CA");
 
+  useEffect(() => {
+    if (!open || !entry) return;
+    setName(entry.name); setAmount(String(entry.amount));
+    if (entry.reference_month) setDate(String(entry.reference_month).slice(0, 10));
+    setKind((KINDS as readonly string[]).includes(entry.kind) ? entry.kind as (typeof KINDS)[number] : "extra");
+    setCategoryLabel(entry.category_label ?? ""); setRecurring(Boolean(entry.recurring));
+    setOwner((entry.owner as Owner) ?? "ele"); setRealized(entry.status === "recebido");
+  }, [open, entry]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Sem sessão");
-      const { error } = await supabase.rpc("save_financial_entry", {
+      const args = {
         p_type: "receita", p_name: name, p_amount: Number(amount), p_date: date,
         p_category: kind, p_label: categoryLabel || kind, p_owner: owner,
         p_recurring: recurring, p_realized: realized && date <= today,
-      });
+      };
+      const { error } = entry
+        ? await supabase.rpc("update_financial_entry", { ...args, p_id: entry.id })
+        : await supabase.rpc("save_financial_entry", args);
       if (error) throw error;
-      toast.success("Receita lançada");
+      toast.success(entry ? "Receita atualizada" : "Receita lançada");
       qc.invalidateQueries();
       setName(""); setAmount(""); setKind("extra"); setRecurring(false); setCategoryLabel("");
       onOpenChange(false);
@@ -53,7 +67,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
-        <DialogHeader><DialogTitle>Nova receita</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{entry ? "Editar receita" : "Nova receita"}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <EntryAiTools type="receita" description={name} amount={amount} onSuggestion={(s, fromPhoto) => {
             setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
@@ -98,7 +112,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
           <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Salário, Comissão" /></div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && date <= today} disabled={date > today} onChange={(e) => setRealized(e.target.checked)} />Receita já recebida</label>
           <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-            {loading ? "Salvando..." : "Lançar receita"}
+            {loading ? "Salvando..." : entry ? "Salvar alterações" : "Lançar receita"}
           </Button>
         </form>
       </DialogContent>

@@ -5,9 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { brl } from "@/lib/format";
-import { AddIncomeDialog } from "@/components/AddIncomeDialog";
-import { AddExpenseDialog } from "@/components/AddExpenseDialog";
-import { Plus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { AddIncomeDialog, type EditableIncome } from "@/components/AddIncomeDialog";
+import { AddExpenseDialog, type EditableExpense } from "@/components/AddExpenseDialog";
+import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { parseLocalDate } from "@/lib/finance";
@@ -16,9 +16,9 @@ export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
     meta: [
       { title: "Adicionar — Lançamentos | Meu Caixa" },
-      { name: "description", content: "Gerencie suas receitas e despesas, variáveis e recorrentes." },
+      { name: "description", content: "Lance, edite e exclua suas receitas e despesas." },
       { property: "og:title", content: "Adicionar — Lançamentos | Meu Caixa" },
-      { property: "og:description", content: "Gerencie suas receitas e despesas, variáveis e recorrentes." },
+      { property: "og:description", content: "Lance, edite e exclua suas receitas e despesas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -36,7 +36,7 @@ type Row = {
   status: string;
   when: string;
   owner: string;
-  recurrent: boolean;
+  source: EditableIncome | EditableExpense;
 };
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -52,8 +52,6 @@ const CAT_DOT: Record<string, string> = {
   movimentacao: "bg-cat-cartao",
 };
 
-type Filter = "todos" | "entrada" | "saida";
-type Kind = "variaveis" | "recorrentes";
 
 function Lancamentos() {
   const { data: income = [] } = useIncome();
@@ -61,7 +59,6 @@ function Lancamentos() {
   const del = useDeleteEntry();
   const delAll = useDeleteAllEntries();
 
-  const [filter, setFilter] = useState<Filter>("todos");
   const [ownerFilter, setOwnerFilter] = useState<Owner | "todos">("todos");
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
@@ -70,7 +67,8 @@ function Lancamentos() {
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const shift = (n: number) => setCursor(new Date(year, month + n, 1));
-  const [kind, setKind] = useState<Kind>("variaveis");
+  const [editIncome, setEditIncome] = useState<EditableIncome | null>(null);
+  const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
@@ -100,7 +98,7 @@ function Lancamentos() {
           status: i.status,
           when: i.reference_month ? String(i.reference_month).slice(0, 7) : "recorrente",
           owner: (i as { owner?: string }).owner ?? "ele",
-          recurrent: Boolean(i.recurring),
+          source: i as unknown as EditableIncome,
         })),
       ...expenses
         .filter((e) => {
@@ -119,18 +117,16 @@ function Lancamentos() {
         status: e.status,
         when: parseLocalDate(e.due_date).toLocaleDateString("pt-BR"),
         owner: (e as { owner?: string }).owner ?? "ele",
-        recurrent: e.category === "fixa" || e.category === "parcelada",
+        source: e as unknown as EditableExpense,
         })),
     ];
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
-        (filter === "todos" || r.type === filter) &&
         (ownerFilter === "todos" || r.owner === ownerFilter) &&
-        (kind === "recorrentes" ? r.recurrent : !r.recurrent) &&
         (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
     );
-  }, [income, expenses, filter, ownerFilter, kind, q, year, month, cursor]);
+  }, [income, expenses, ownerFilter, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -213,34 +209,6 @@ function Lancamentos() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
-        {(["variaveis", "recorrentes"] as Kind[]).map((k) => (
-          <button
-            key={k}
-            onClick={() => setKind(k)}
-            className={`rounded-full py-2 text-sm font-medium transition-colors ${
-              kind === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            {k === "variaveis" ? "Variáveis" : "Recorrentes"}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
-        {(["todos", "entrada", "saida"] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full py-2 text-sm font-medium transition-colors ${
-              filter === f ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            {f === "todos" ? "Todos" : f === "entrada" ? "Entradas" : "Saídas"}
-          </button>
-        ))}
-      </div>
-
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -294,7 +262,10 @@ function Lancamentos() {
                     <span className={`shrink-0 text-sm font-semibold tabular-nums ${tone}`}>
                       {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger" aria-label={`Excluir ${r.description}`} onClick={() => remove(r)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </li>
@@ -307,6 +278,8 @@ function Lancamentos() {
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
       <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
+      <AddIncomeDialog open={!!editIncome} entry={editIncome} onOpenChange={(v) => !v && setEditIncome(null)} />
+      <AddExpenseDialog open={!!editExpense} entry={editExpense} onOpenChange={(v) => !v && setEditExpense(null)} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,9 @@ import { EntryAiTools } from "@/components/EntryAiTools";
 
 const CATEGORIES = ["fixa", "variavel", "parcelada", "extra"] as const;
 
-export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export type EditableExpense = { id: string; name: string; amount: number | string; due_date: string; category: string; category_label?: string | null; installment_current?: number | null; installment_total?: number | null; note?: string | null; owner?: string | null; status: string };
+
+export function AddExpenseDialog({ open, onOpenChange, entry }: { open: boolean; onOpenChange: (v: boolean) => void; entry?: EditableExpense | null }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -29,21 +31,33 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
   const [realized, setRealized] = useState(true);
   const today = new Date().toLocaleDateString("en-CA");
 
+  useEffect(() => {
+    if (!open || !entry) return;
+    setName(entry.name); setAmount(String(entry.amount)); setDueDate(String(entry.due_date).slice(0, 10));
+    setCategory((CATEGORIES as readonly string[]).includes(entry.category) ? entry.category as (typeof CATEGORIES)[number] : "variavel");
+    setCategoryLabel(entry.category_label ?? ""); setInstCur(entry.installment_current ? String(entry.installment_current) : "");
+    setInstTot(entry.installment_total ? String(entry.installment_total) : ""); setNote(entry.note ?? "");
+    setOwner((entry.owner as Owner) ?? "ele"); setRealized(entry.status === "pago");
+  }, [open, entry]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Sem sessão");
-      const { error } = await supabase.rpc("save_financial_entry", {
+      const args = {
         p_type: "despesa", p_name: name, p_amount: Number(amount), p_date: dueDate,
         p_category: category, p_label: categoryLabel || category, p_owner: owner,
         p_recurring: category === "fixa" || category === "parcelada", p_realized: realized && dueDate <= today,
         p_installment_current: instCur ? Number(instCur) : undefined,
         p_installment_total: instTot ? Number(instTot) : undefined, p_note: note || undefined,
-      });
+      };
+      const { error } = entry
+        ? await supabase.rpc("update_financial_entry", { ...args, p_id: entry.id })
+        : await supabase.rpc("save_financial_entry", args);
       if (error) throw error;
-      toast.success("Despesa lançada");
+      toast.success(entry ? "Despesa atualizada" : "Despesa lançada");
       qc.invalidateQueries();
       setName(""); setAmount(""); setDueDate(dueDate); setCategory("fixa");
       setInstCur(""); setInstTot(""); setNote(""); setCategoryLabel("");
@@ -58,7 +72,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
-        <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{entry ? "Editar despesa" : "Nova despesa"}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <EntryAiTools type="despesa" description={name} amount={amount} onSuggestion={(s, fromPhoto) => {
             setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
@@ -111,7 +125,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
           <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Alimentação, Transporte" /></div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && dueDate <= today} disabled={dueDate > today} onChange={(e) => setRealized(e.target.checked)} />Despesa já paga</label>
           <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-            {loading ? "Salvando..." : "Lançar despesa"}
+            {loading ? "Salvando..." : entry ? "Salvar alterações" : "Lançar despesa"}
           </Button>
         </form>
       </DialogContent>
