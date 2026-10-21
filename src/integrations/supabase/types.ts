@@ -360,6 +360,24 @@ export type Database = {
         }
         Returns: string
       }
+      update_financial_entry: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_date: string
+          p_id: string
+          p_installment_current?: number
+          p_installment_total?: number
+          p_label: string
+          p_name: string
+          p_note?: string
+          p_owner: string
+          p_realized: boolean
+          p_recurring: boolean
+          p_type: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
