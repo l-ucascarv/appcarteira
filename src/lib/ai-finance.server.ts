@@ -58,7 +58,7 @@ async function allRows<T extends "income" | "expenses" | "transactions" | "reser
   for (let start = 0; ; start += 1000) {
     const { data, error } = await client.from(table).select("*").order("id").range(start, start + 999);
     if (error) throw error;
-    rows.push(...(data as Database["public"]["Tables"][T]["Row"][] ?? []));
+    rows.push(...(data as unknown as Database["public"]["Tables"][T]["Row"][] ?? []));
     if (!data || data.length < 1000) return rows;
   }
 }
