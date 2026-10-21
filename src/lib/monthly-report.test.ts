@@ -5,6 +5,18 @@ const month = new Date(2026, 9, 1);
 const expense = (id: string, amount: number, category: string, due_date: string, status: Expense["status"] = "pendente"): Expense => ({ id, name: id, amount, category, due_date, due_day: Number(due_date.slice(8)), status, installment_current: null, installment_total: null, note: null });
 const income: Income[] = [{ id: "salary", name: "Salário", amount: 1000, kind: "salario", category_label: "Trabalho", reference_month: "2026-10-20", recurring: false, status: "previsto", received_at: null }];
 describe("painéis mensais", () => {
+  it("comprometido em Saldos acompanha inclusão, edição e exclusão de fixos", () => {
+    const total = (expenses: Expense[]) => fixedMonthlyExpenses(expenses, month).reduce((sum, entry) => sum + entry.amount, 0);
+    const rent = expense("aluguel", 500, "fixa", "2026-09-10", "pago");
+    const internet = expense("internet", 80, "fixa", "2026-10-25");
+    const variable = expense("mercado", 100, "variavel", "2026-10-25");
+    expect(total([])).toBe(0);
+    expect(total([rent, variable])).toBe(500);
+    expect(total([rent, internet, variable])).toBe(580);
+    expect(total([rent, { ...internet, amount: 120 }, variable])).toBe(620);
+    expect(total([rent, { ...internet, category: "variavel" }, variable])).toBe(500);
+    expect(total([internet, variable])).toBe(80);
+  });
   it("comprometido é somente fixos do mês, incluindo pagos e vencimentos", () => {
     const result = fixedMonthlyExpenses([expense("aluguel", 500, "fixa", "2026-09-10", "pago"), expense("mercado", 100, "variavel", "2026-10-21"), expense("futuro", 900, "fixa", "2026-11-01"), expense("internet", 80, "fixa", "2026-10-25")], month);
     expect(result.map((entry) => [entry.id, entry.day, entry.amount])).toEqual([["aluguel", 10, 500], ["internet", 25, 80]]);
