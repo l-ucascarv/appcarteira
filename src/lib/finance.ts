@@ -42,6 +42,7 @@ export type Transaction = {
   amount: number;
   kind: string;
   occurred_at: string;
+  reference_id?: string | null;
 };
 
 export function realizedBalance(transactions: Transaction[], date = new Date()): number {
@@ -99,12 +100,17 @@ export function currentMonthExpenses(expenses: Expense[], date = new Date()): Ex
   });
 }
 
-export function futureFixedCommitment(expenses: Expense[], date = new Date()): number {
+export function futureFixedCommitment(expenses: Expense[], date = new Date(), transactions: Transaction[] = []): number {
   const today = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   return currentMonthExpenses(expenses, date)
     .filter((expense) => {
       const origin = parseLocalDate(expense.due_date);
       const sameMonth = origin.getFullYear() === date.getFullYear() && origin.getMonth() === date.getMonth();
+      const paidThisMonth = transactions.some((t) => {
+        const paid = new Date(t.occurred_at);
+        return t.reference_id === expense.id && t.kind === "despesa" && paid.getFullYear() === date.getFullYear() && paid.getMonth() === date.getMonth() && paid.getTime() < today + 86400000;
+      });
+      if (paidThisMonth) return false;
       if (expense.status === "pago" && sameMonth) return false;
       const occurrence = new Date(date.getFullYear(), date.getMonth(), expense.due_day).getTime();
       return expense.category === "fixa" || occurrence >= today;

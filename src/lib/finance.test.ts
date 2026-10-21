@@ -14,4 +14,7 @@ describe("saldos solicitados", () => {
     income.push({ ...income[0], id: "futura", recurring: true, reference_month: "2026-11-01", amount: 1000 });
     expect(monthIncomeExpected(income, today)).toBe(400);
   });
+  it("fixo pago no mês não fica comprometido novamente", () => {
+    expect(futureFixedCommitment([expense("aluguel", 500, "fixa", "2026-09-10", "pago")], today, [{ amount: -500, kind: "despesa", reference_id: "aluguel", occurred_at: "2026-10-10T12:00:00" }])).toBe(0);
+  });
 });

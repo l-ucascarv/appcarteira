@@ -55,9 +55,10 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
       <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
         <DialogHeader><DialogTitle>Nova receita</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <EntryAiTools type="receita" description={name} amount={amount} onSuggestion={(s) => {
+          <EntryAiTools type="receita" description={name} amount={amount} onSuggestion={(s, fromPhoto) => {
             setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
             if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) setDate(s.date);
+            else if (fromPhoto) setDate("");
             setKind(s.kind); setCategoryLabel(s.category);
           }} />
           <div className="space-y-2">

@@ -60,9 +60,10 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
       <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
         <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <EntryAiTools type="despesa" description={name} amount={amount} onSuggestion={(s) => {
+          <EntryAiTools type="despesa" description={name} amount={amount} onSuggestion={(s, fromPhoto) => {
             setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
             if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) setDueDate(s.date);
+            else if (fromPhoto) setDueDate("");
             setCategory(s.expenseType); setCategoryLabel(s.category);
           }} />
           <div className="space-y-2">

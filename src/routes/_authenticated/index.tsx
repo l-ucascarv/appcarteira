@@ -54,7 +54,7 @@ function Dashboard() {
   const accountBalance = realizedBalance(transactions);
   const [reserveOpen, setReserveOpen] = useState(false);
   const reservedBalance = reserves.reduce((sum, reserve) => sum + Number(reserve.current_amount), 0);
-  const committedBalance = futureFixedCommitment(expenses);
+  const committedBalance = futureFixedCommitment(expenses, new Date(), transactions);
   const monthReceita = monthIncomeExpected(income);
   const monthExpenses = currentMonthExpenses(expenses);
   const monthDespesa = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);

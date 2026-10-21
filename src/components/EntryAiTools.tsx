@@ -6,7 +6,7 @@ import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export type EntrySuggestion = NonNullable<Awaited<ReturnType<typeof suggestEntry>>["data"]>;
-export function EntryAiTools({ type, description, amount, onSuggestion }: { type: "receita" | "despesa"; description: string; amount: string; onSuggestion: (value: EntrySuggestion) => void }) {
+export function EntryAiTools({ type, description, amount, onSuggestion }: { type: "receita" | "despesa"; description: string; amount: string; onSuggestion: (value: EntrySuggestion, fromPhoto: boolean) => void }) {
   const suggest = useServerFn(suggestEntry);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -19,7 +19,7 @@ export function EntryAiTools({ type, description, amount, onSuggestion }: { type
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const result = await suggest({ data: { type, description, amount: Number(amount) || 0, image, today } });
       if (result.error || !result.data) throw new Error(result.error ?? "Sem sugestão");
-      onSuggestion(result.data); setMessage(result.data.explanation);
+      onSuggestion(result.data, Boolean(image)); setMessage(result.data.explanation);
       if (image && !result.data.date) toast.warning("Data não identificada. Confira a data antes de salvar.");
     } catch (error) { const text = error instanceof Error ? error.message : "Erro na análise"; setMessage(text); toast.error(text); }
     finally { setBusy(false); }
