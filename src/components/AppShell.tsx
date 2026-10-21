@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon className="h-[18px] w-[18px]" />
-                <span className={`max-w-full whitespace-nowrap text-center leading-tight ${n.label === "comprometido" ? "text-[9px]" : ""}`}>{n.label}</span>
+                <span className={`max-w-full whitespace-nowrap text-center leading-tight ${n.label === "comprometido" ? "text-[8px]" : ""}`}>{n.label}</span>
               </Link>
             );
           })}
