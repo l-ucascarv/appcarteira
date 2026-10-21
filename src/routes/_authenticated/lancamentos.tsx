@@ -15,10 +15,10 @@ import { parseLocalDate } from "@/lib/finance";
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
     meta: [
-      { title: "Tags e categorias — Meu Caixa" },
-      { name: "description", content: "Receitas e gastos separados por categoria de lançamento." },
-      { property: "og:title", content: "Tags e categorias — Meu Caixa" },
-      { property: "og:description", content: "Receitas e gastos separados por categoria de lançamento." },
+      { title: "Adicionar — Lançamentos | Meu Caixa" },
+      { name: "description", content: "Gerencie suas receitas e despesas, variáveis e recorrentes." },
+      { property: "og:title", content: "Adicionar — Lançamentos | Meu Caixa" },
+      { property: "og:description", content: "Gerencie suas receitas e despesas, variáveis e recorrentes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -163,8 +163,8 @@ function Lancamentos() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Tags</h1>
-          <p className="text-sm text-muted-foreground">Receitas e gastos organizados por categoria.</p>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Adicionar</h1>
+          
         </div>
         <Button variant="ghost" size="sm" className="rounded-full text-danger" onClick={removeAll} disabled={delAll.isPending}>
           <Trash2 className="mr-1 h-4 w-4" /> Limpar tudo

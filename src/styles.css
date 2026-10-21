@@ -191,3 +191,12 @@
   box-shadow: 0 1px 2px oklch(0 0 0 / 5%), 0 8px 24px -16px oklch(0 0 0 / 18%);
 }
 
+.category-progress { appearance: none; border: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--muted); }
+.category-progress::-webkit-progress-bar { background: var(--muted); }
+.category-progress-income { color: var(--success); }
+.category-progress-expense { color: var(--danger); }
+.category-progress-income::-webkit-progress-value { background: var(--success); }
+.category-progress-expense::-webkit-progress-value { background: var(--danger); }
+.category-progress-income::-moz-progress-bar { background: var(--success); }
+.category-progress-expense::-moz-progress-bar { background: var(--danger); }
+

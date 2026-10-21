@@ -4,6 +4,7 @@ import {
   Tags,
   PlusCircle,
   CalendarClock,
+  CalendarCheck,
   BarChart3,
   PiggyBank,
   LogOut,
@@ -17,7 +18,8 @@ import type { ReactNode } from "react";
 
 const NAV = [
   { to: "/", label: "saldos", icon: Wallet },
-  { to: "/lancamentos", label: "tags", icon: Tags },
+  { to: "/tags", label: "tags", icon: Tags },
+  { to: "/comprometido", label: "comprometido", icon: CalendarCheck },
 ] as const;
 
 const ACTIONS = [
@@ -125,8 +127,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Bottom nav (mobile) */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-background/85 px-2 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5">
-          {[NAV[0], NAV[1], ACTIONS[2], ACTIONS[0], ACTIONS[1]].map((n) => {
+        <div className="mx-auto grid max-w-lg grid-cols-6">
+          {[NAV[0], NAV[1], NAV[2], ACTIONS[2], ACTIONS[0], ACTIONS[1]].map((n) => {
             const active = loc.pathname === n.to;
             const Icon = n.icon;
             return (
@@ -138,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon className="h-[18px] w-[18px]" />
-                <span className="truncate">{n.label}</span>
+                <span className={`max-w-full whitespace-nowrap text-center leading-tight ${n.label === "comprometido" ? "text-[8px]" : ""}`}>{n.label}</span>
               </Link>
             );
           })}
