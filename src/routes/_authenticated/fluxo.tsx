@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { useIncome, useExpenses, useTransactions, useAccounts } from "@/lib/queries";
+import { useState } from "react";
+import { useIncome, useExpenses, useTransactions } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
@@ -8,7 +8,7 @@ import { AddIncomeDialog } from "@/components/AddIncomeDialog";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
 import { OwnerIcon } from "@/components/OwnerBadge";
-import { parseLocalDate, realizedBalance } from "@/lib/finance";
+import { horizonMonth } from "@/lib/monthly-report";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
   head: () => ({
@@ -26,22 +26,12 @@ export const Route = createFileRoute("/_authenticated/fluxo")({
 
 type View = "entradas" | "saidas";
 
-type DayEvent = {
-  id: string;
-  kind: "receita" | "despesa";
-  description: string;
-  amount: number; // sempre positivo
-  realized: boolean;
-  owner: string;
-};
-
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function Fluxo() {
   const { data: income = [] } = useIncome();
   const { data: expenses = [] } = useExpenses();
   const { data: transactions = [] } = useTransactions();
-  const { data: accounts = [] } = useAccounts();
 
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
@@ -57,98 +47,13 @@ function Fluxo() {
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-  const monthStart = new Date(year, month, 1).getTime();
-  const startBalance = realizedBalance(
-    transactions.filter((transaction) => new Date(transaction.occurred_at as string).getTime() < monthStart),
-  );
-
-  const { rows, totalIn, totalOut } = useMemo(() => {
-    const inByDay: Record<number, DayEvent[]> = {};
-    const outByDay: Record<number, DayEvent[]> = {};
-    const push = (map: Record<number, DayEvent[]>, day: number, ev: DayEvent) => {
-      if (day < 1 || day > daysInMonth) return;
-      (map[day] ??= []).push(ev);
-    };
-
-    const inMonth = (iso: string) => {
-      const d = new Date(iso);
-      return d.getFullYear() === year && d.getMonth() === month ? d.getDate() : null;
-    };
-
-    for (const t of transactions) {
-      if (t.kind === "reserva") continue;
-      const day = inMonth(t.occurred_at as string);
-      if (!day) continue;
-      const amt = Number(t.amount);
-      const ev: DayEvent = {
-        id: t.id as string,
-        kind: amt >= 0 ? "receita" : "despesa",
-        description: t.description as string,
-        amount: Math.abs(amt),
-        realized: true,
-        owner: (t as { owner?: string }).owner ?? "ele",
-      };
-      push(amt >= 0 ? inByDay : outByDay, day, ev);
-    }
-
-    for (const i of income) {
-      if (i.status !== "previsto") continue;
-      const ref = i.reference_month ? parseLocalDate(i.reference_month) : null;
-      const selectedMonth = new Date(year, month, 1).getTime();
-      if (ref && i.recurring && new Date(ref.getFullYear(), ref.getMonth(), 1).getTime() > selectedMonth) continue;
-      if (ref && (ref.getFullYear() !== year || ref.getMonth() !== month) && !i.recurring) continue;
-      const day = ref && ref.getFullYear() === year && ref.getMonth() === month ? ref.getDate() : 5;
-      push(inByDay, day, {
-        id: i.id,
-        kind: "receita",
-        description: i.name,
-        amount: Number(i.amount),
-        realized: false,
-        owner: (i as { owner?: string }).owner ?? "ele",
-      });
-    }
-
-    for (const e of expenses) {
-      if (e.status === "pago") continue;
-      const recurring = e.category === "fixa" || e.category === "parcelada";
-      const dueDate = parseLocalDate(e.due_date);
-      if (recurring && new Date(dueDate.getFullYear(), dueDate.getMonth(), 1).getTime() > new Date(year, month, 1).getTime()) continue;
-      if (!recurring && (dueDate.getFullYear() !== year || dueDate.getMonth() !== month)) continue;
-      push(outByDay, recurring ? e.due_day : dueDate.getDate(), {
-        id: e.id,
-        kind: "despesa",
-        description: e.name,
-        amount: Number(e.amount),
-        realized: false,
-        owner: (e as { owner?: string }).owner ?? "ele",
-      });
-    }
-
-    let running = startBalance;
-    let totalIn = 0;
-    let totalOut = 0;
-    const rows = Array.from({ length: daysInMonth }, (_, idx) => {
-      const day = idx + 1;
-      const ins = inByDay[day] ?? [];
-      const outs = outByDay[day] ?? [];
-      const sumIn = ins.reduce((s, e) => s + e.amount, 0);
-      const sumOut = outs.reduce((s, e) => s + e.amount, 0);
-      totalIn += sumIn;
-      totalOut += sumOut;
-      const realizedIn = ins.filter((event) => event.realized).reduce((sum, event) => sum + event.amount, 0);
-      const realizedOut = outs.filter((event) => event.realized).reduce((sum, event) => sum + event.amount, 0);
-      running += realizedIn - realizedOut;
-      return {
-        day,
-        events: view === "entradas" ? ins : outs,
-        value: view === "entradas" ? sumIn : sumOut,
-        balance: running,
-        isToday: isCurrentMonth && today.getDate() === day,
-      };
-    });
-
-    return { rows, totalIn, totalOut };
-  }, [transactions, income, expenses, year, month, daysInMonth, view, startBalance, isCurrentMonth, today]);
+  const { rows: dailyRows, totalIn, totalOut, startBalance, endBalance } = horizonMonth(income, expenses, transactions, cursor);
+  const rows = dailyRows.map((row) => ({
+    ...row,
+    events: (view === "entradas" ? row.ins : row.outs).map((entry) => ({ ...entry, kind: entry.type })),
+    value: view === "entradas" ? row.sumIn : row.sumOut,
+    isToday: isCurrentMonth && today.getDate() === row.day,
+  }));
 
   const shift = (n: number) => setCursor(new Date(year, month + n, 1));
 
@@ -170,7 +75,8 @@ function Fluxo() {
       {/* Toggle Entradas / Saídas */}
       <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
         {(["entradas", "saidas"] as View[]).map((v) => (
-          <button
+          <Button
+            variant="ghost"
             key={v}
             onClick={() => setView(v)}
             className={`rounded-full py-2 text-sm font-medium transition-colors ${
@@ -178,7 +84,7 @@ function Fluxo() {
             }`}
           >
             {v === "entradas" ? "Entradas" : "Saídas"}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -198,7 +104,7 @@ function Fluxo() {
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <TrendingUp className="h-3.5 w-3.5" /> Saldo fim do mês
           </div>
-          <div className="mt-1 text-lg font-semibold tabular-nums">{brl(rows[rows.length - 1]?.balance ?? startBalance)}</div>
+          <div className="mt-1 text-lg font-semibold tabular-nums">{brl(endBalance)}</div>
         </Card>
       </div>
 
@@ -210,6 +116,8 @@ function Fluxo() {
           <Plus className="mr-1 h-4 w-4" /> Despesa
         </Button>
       </div>
+
+      <div className="text-sm text-muted-foreground">Saldo anterior ao mês <span className="font-medium tabular-nums text-foreground">{brl(startBalance)}</span></div>
 
       {/* Tabela dia a dia */}
       <Card className="overflow-hidden rounded-2xl p-0 shadow-none">
