@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Separar Tags de Adicionar e mostrar ranking mensal de categorias.
-- [ ] Criar Comprometido com custo fixo mensal e vencimentos.
-- [ ] Corrigir Horizonte com saldo anterior + todas as entradas - todas as saídas e validar.
+- [x] Separar Tags de Adicionar e mostrar ranking mensal de categorias.
+- [x] Criar Comprometido com custo fixo mensal e vencimentos.
+- [x] Corrigir Horizonte com saldo anterior + todas as entradas - todas as saídas e validar.
 
 - [x] Remover os menus Totais e Menu sem deixar links órfãos.
 - [x] Transformar Tags em visão por categorias, separando receitas e despesas.
