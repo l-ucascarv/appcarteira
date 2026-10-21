@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { OwnerSelect, type Owner } from "@/components/OwnerBadge";
+import { EntryAiTools } from "@/components/EntryAiTools";
 
 const KINDS = ["salario", "plantao", "comissao", "extra"] as const;
 
@@ -22,6 +23,9 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const [recurring, setRecurring] = useState(false);
   const [owner, setOwner] = useState<Owner>("ele");
   const [loading, setLoading] = useState(false);
+  const [categoryLabel, setCategoryLabel] = useState("");
+  const [realized, setRealized] = useState(true);
+  const today = new Date().toLocaleDateString("en-CA");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,20 +33,15 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Sem sessão");
-      const { error } = await supabase.from("income").insert({
-        user_id: u.user.id,
-        owner,
-        name,
-        amount: Number(amount),
-        kind,
-        reference_month: date || null,
-        recurring,
-        status: "previsto",
+      const { error } = await supabase.rpc("save_financial_entry", {
+        p_type: "receita", p_name: name, p_amount: Number(amount), p_date: date,
+        p_category: kind, p_label: categoryLabel || kind, p_owner: owner,
+        p_recurring: recurring, p_realized: realized && date <= today,
       });
       if (error) throw error;
       toast.success("Receita lançada");
       qc.invalidateQueries();
-      setName(""); setAmount(""); setKind("extra"); setRecurring(false);
+      setName(""); setAmount(""); setKind("extra"); setRecurring(false); setCategoryLabel("");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao lançar");
@@ -53,21 +52,27 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
         <DialogHeader><DialogTitle>Nova receita</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <EntryAiTools type="receita" description={name} amount={amount} onSuggestion={(s, fromPhoto) => {
+            setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
+            if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) setDate(s.date);
+            else if (fromPhoto) setDate("");
+            setKind(s.kind); setCategoryLabel(s.category);
+          }} />
           <div className="space-y-2">
             <Label>Quem lançou</Label>
             <OwnerSelect value={owner} onChange={setOwner} />
           </div>
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input aria-label="Descrição" maxLength={200} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              <Input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>Tipo</Label>
@@ -90,6 +95,8 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
               <span className="text-sm">Recorrente</span>
             </label>
           </div>
+          <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Salário, Comissão" /></div>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && date <= today} disabled={date > today} onChange={(e) => setRealized(e.target.checked)} />Receita já recebida</label>
           <Button type="submit" className="w-full rounded-xl" disabled={loading}>
             {loading ? "Salvando..." : "Lançar receita"}
           </Button>

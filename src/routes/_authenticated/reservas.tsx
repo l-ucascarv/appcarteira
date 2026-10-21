@@ -6,7 +6,13 @@ import { brl } from "@/lib/format";
 import { reserveEta, monthIncomeExpected } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/reservas")({
-  head: () => ({ meta: [{ title: "Reservas — Meu Caixa" }] }),
+  head: () => ({ meta: [
+    { title: "Reservas — Meu Caixa" },
+    { name: "description", content: "Acompanhe os valores que você reservou no Meu Caixa." },
+    { property: "og:title", content: "Reservas — Meu Caixa" },
+    { property: "og:description", content: "Acompanhe os valores que você reservou no Meu Caixa." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: Reservas,
 });
 

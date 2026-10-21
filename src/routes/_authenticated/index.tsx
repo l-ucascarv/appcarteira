@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { SpendingAnalysis } from "@/components/SpendingAnalysis";
+import { ReserveDialog } from "@/components/ReserveDialog";
 import {
   useAccounts,
   useReserves,
@@ -48,19 +52,15 @@ function Dashboard() {
   const { data: transactions = [] } = useTransactions();
 
   const accountBalance = realizedBalance(transactions);
-  const todayBalance = realizedOnDate(transactions);
+  const [reserveOpen, setReserveOpen] = useState(false);
   const reservedBalance = reserves.reduce((sum, reserve) => sum + Number(reserve.current_amount), 0);
-  const committedBalance = futureFixedCommitment(expenses);
-  const freeBalance = accountBalance - reservedBalance - committedBalance;
+  const committedBalance = futureFixedCommitment(expenses, new Date(), transactions);
   const monthReceita = monthIncomeExpected(income);
   const monthExpenses = currentMonthExpenses(expenses);
   const monthDespesa = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const emergencia = reserves.find((r) => r.name.toLowerCase().includes("emerg"));
-  const patrimonio = accountBalance + reservedBalance;
+  const patrimonio = accountBalance;
   const bill = nextBill(expenses);
-  const comissaoPrevista = income
-    .filter((i) => i.kind === "comissao" && i.status === "previsto")
-    .reduce((s, i) => s + Number(i.amount), 0);
 
   // Chart: últimos 6 meses a partir dos lançamentos reais
   const now = new Date();
@@ -114,27 +114,19 @@ function Dashboard() {
       </div>
 
       {/* Hero: Disponível */}
-      <KpiCard
-        accent="primary"
-        label="Disponível para gastar"
-        value={brl(freeBalance)}
-        hint="Saldo da conta − reservas − despesas fixas futuras"
-        icon={<Sparkles className="h-5 w-5" />}
-      />
+      <SpendingAnalysis signature={JSON.stringify([income, expenses, transactions, reserves])} />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <KpiCard label="Saldo da conta" value={brl(accountBalance)} hint="Somente realizado" icon={<Wallet className="h-4 w-4" />} />
-        <KpiCard label="Saldo do dia" value={brl(todayBalance)} hint="Movimentações de hoje" icon={<CalendarClock className="h-4 w-4" />} accent={todayBalance >= 0 ? "positive" : "negative"} />
-        <KpiCard label="Reservado" value={brl(reservedBalance)} icon={<ShieldCheck className="h-4 w-4" />} />
-        <KpiCard label="Comprometido" value={brl(committedBalance)} hint="Despesas fixas futuras" icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
+        <KpiCard label="Reservado" value={brl(reservedBalance)} hint={<Button variant="link" size="sm" className="h-auto p-0" onClick={() => setReserveOpen(true)}>Ajustar reserva</Button>} icon={<ShieldCheck className="h-4 w-4" />} />
+        <KpiCard label="Comprometido" value={brl(committedBalance)} hint="Fixos pendentes + despesas futuras do mês" icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard label="Receitas do mês" value={brl(monthReceita)} icon={<TrendingUp className="h-4 w-4" />} accent="positive" />
         <KpiCard label="Despesas do mês" value={brl(monthDespesa)} icon={<TrendingDown className="h-4 w-4" />} accent="negative" />
         <KpiCard label="Patrimônio" value={brl(patrimonio)} icon={<PiggyBank className="h-4 w-4" />} />
-        <KpiCard label="Comissão prevista" value={brl(comissaoPrevista)} icon={<Sparkles className="h-4 w-4" />} />
         <KpiCard
           label="Próxima conta"
           value={bill ? brl(bill.amount) : "—"}
@@ -208,8 +200,8 @@ function Dashboard() {
                 <XAxis dataKey="m" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
-                <Bar dataKey="Receitas" fill="#10b981" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Despesas" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Receitas" fill="var(--color-success)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Despesas" fill="var(--color-danger)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -230,6 +222,7 @@ function Dashboard() {
           </div>
         </Card>
       </div>
+      <ReserveDialog open={reserveOpen} onOpenChange={setReserveOpen} reserves={reserves} />
     </div>
   );
 }
