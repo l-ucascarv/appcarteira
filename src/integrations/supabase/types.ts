@@ -41,10 +41,32 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_access_state: {
+        Row: {
+          id: string
+          message: string
+          status: number
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          message: string
+          status: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          message?: string
+          status?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
           category: string
+          category_label: string | null
           created_at: string
           due_date: string
           due_day: number
@@ -60,6 +82,7 @@ export type Database = {
         Insert: {
           amount: number
           category?: string
+          category_label?: string | null
           created_at?: string
           due_date?: string
           due_day: number
@@ -75,6 +98,7 @@ export type Database = {
         Update: {
           amount?: number
           category?: string
+          category_label?: string | null
           created_at?: string
           due_date?: string
           due_day?: number
@@ -122,6 +146,7 @@ export type Database = {
       income: {
         Row: {
           amount: number
+          category_label: string | null
           created_at: string
           id: string
           kind: string
@@ -135,6 +160,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          category_label?: string | null
           created_at?: string
           id?: string
           kind: string
@@ -148,6 +174,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category_label?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -316,7 +343,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_financial_entry: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_date: string
+          p_installment_current?: number
+          p_installment_total?: number
+          p_label: string
+          p_name: string
+          p_note?: string
+          p_owner: string
+          p_realized: boolean
+          p_recurring: boolean
+          p_type: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
