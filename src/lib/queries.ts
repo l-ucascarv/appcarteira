@@ -81,13 +81,15 @@ export function useTransactions() {
   return useQuery({
     queryKey: ["transactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("occurred_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data ?? [];
+      const rows = [];
+      for (let start = 0; ; start += 1000) {
+        const { data, error } = await supabase.from("transactions").select("*")
+          .order("occurred_at", { ascending: false }).order("id").range(start, start + 999);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return rows;
     },
   });
 }

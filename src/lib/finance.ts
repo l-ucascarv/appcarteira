@@ -10,6 +10,7 @@ export type Income = {
   recurring: boolean;
   status: "previsto" | "recebido";
   received_at: string | null;
+  category_label?: string | null;
 };
 
 export type Expense = {
@@ -23,6 +24,7 @@ export type Expense = {
   installment_current: number | null;
   installment_total: number | null;
   note: string | null;
+  category_label?: string | null;
 };
 
 export type Reserve = {
@@ -42,9 +44,10 @@ export type Transaction = {
   occurred_at: string;
 };
 
-export function realizedBalance(transactions: Transaction[]): number {
+export function realizedBalance(transactions: Transaction[], date = new Date()): number {
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
   return transactions
-    .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
+    .filter((transaction) => (transaction.kind === "receita" || transaction.kind === "despesa") && new Date(transaction.occurred_at).getTime() < end)
     .reduce((total, transaction) => total + Number(transaction.amount), 0);
 }
 
@@ -100,9 +103,11 @@ export function futureFixedCommitment(expenses: Expense[], date = new Date()): n
   const today = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   return currentMonthExpenses(expenses, date)
     .filter((expense) => {
-      if (expense.category !== "fixa" || expense.status === "pago") return false;
+      const origin = parseLocalDate(expense.due_date);
+      const sameMonth = origin.getFullYear() === date.getFullYear() && origin.getMonth() === date.getMonth();
+      if (expense.status === "pago" && sameMonth) return false;
       const occurrence = new Date(date.getFullYear(), date.getMonth(), expense.due_day).getTime();
-      return occurrence >= today;
+      return expense.category === "fixa" || occurrence >= today;
     })
     .reduce((total, expense) => total + Number(expense.amount), 0);
 }
@@ -111,7 +116,7 @@ export function monthIncomeExpected(income: Income[], date = new Date()): number
   const y = date.getFullYear();
   const m = date.getMonth();
   return income.reduce((s, i) => {
-    if (i.recurring) return s + Number(i.amount);
+    if (i.recurring && (!i.reference_month || parseLocalDate(i.reference_month).getTime() <= new Date(y, m + 1, 0).getTime())) return s + Number(i.amount);
     if (i.reference_month) {
       const d = parseLocalDate(i.reference_month);
       if (d.getFullYear() === y && d.getMonth() === m) return s + Number(i.amount);
