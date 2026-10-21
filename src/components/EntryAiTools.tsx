@@ -20,6 +20,7 @@ export function EntryAiTools({ type, description, amount, onSuggestion }: { type
       const result = await suggest({ data: { type, description, amount: Number(amount) || 0, image, today } });
       if (result.error || !result.data) throw new Error(result.error ?? "Sem sugestão");
       onSuggestion(result.data); setMessage(result.data.explanation);
+      if (image && !result.data.date) toast.warning("Data não identificada. Confira a data antes de salvar.");
     } catch (error) { const text = error instanceof Error ? error.message : "Erro na análise"; setMessage(text); toast.error(text); }
     finally { setBusy(false); }
   }

@@ -61,7 +61,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
         <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <EntryAiTools type="despesa" description={name} amount={amount} onSuggestion={(s) => {
-            setName(s.description); if (s.amount !== null) setAmount(String(s.amount));
+            setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
             if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) setDueDate(s.date);
             setCategory(s.expenseType); setCategoryLabel(s.category);
           }} />
@@ -71,7 +71,7 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
           </div>
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input aria-label="Descrição" maxLength={200} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -79,12 +79,12 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
               <Input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Data de vencimento</Label>
+              <Label>Data do lançamento</Label>
               <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Categoria</Label>
+            <Label>Tipo de despesa</Label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as typeof category)}
@@ -107,11 +107,11 @@ export function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpen
             <Label>Observação</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="opcional" />
           </div>
+          <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Alimentação, Transporte" /></div>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && dueDate <= today} disabled={dueDate > today} onChange={(e) => setRealized(e.target.checked)} />Despesa já paga</label>
           <Button type="submit" className="w-full rounded-xl" disabled={loading}>
             {loading ? "Salvando..." : "Lançar despesa"}
           </Button>
-          <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Alimentação, Transporte" /></div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && dueDate <= today} disabled={dueDate > today} onChange={(e) => setRealized(e.target.checked)} />Despesa já paga</label>
         </form>
       </DialogContent>
     </Dialog>

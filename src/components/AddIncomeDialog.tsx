@@ -56,7 +56,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
         <DialogHeader><DialogTitle>Nova receita</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <EntryAiTools type="receita" description={name} amount={amount} onSuggestion={(s) => {
-            setName(s.description); if (s.amount !== null) setAmount(String(s.amount));
+            setName(s.description); setAmount(s.amount !== null ? String(s.amount) : "");
             if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) setDate(s.date);
             setKind(s.kind); setCategoryLabel(s.category);
           }} />
@@ -66,7 +66,7 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
           </div>
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input aria-label="Descrição" maxLength={200} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -94,11 +94,11 @@ export function AddIncomeDialog({ open, onOpenChange }: { open: boolean; onOpenC
               <span className="text-sm">Recorrente</span>
             </label>
           </div>
+          <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Salário, Comissão" /></div>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && date <= today} disabled={date > today} onChange={(e) => setRealized(e.target.checked)} />Receita já recebida</label>
           <Button type="submit" className="w-full rounded-xl" disabled={loading}>
             {loading ? "Salvando..." : "Lançar receita"}
           </Button>
-          <div className="space-y-2"><Label>Categoria do lançamento</Label><Input aria-label="Categoria do lançamento" value={categoryLabel} maxLength={80} onChange={(e) => setCategoryLabel(e.target.value)} placeholder="Ex.: Salário, Comissão" /></div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={realized && date <= today} disabled={date > today} onChange={(e) => setRealized(e.target.checked)} />Receita já recebida</label>
         </form>
       </DialogContent>
     </Dialog>
