@@ -36,6 +36,7 @@ type Row = {
   status: string;
   when: string;
   owner: string;
+  classification?: "fixa" | "variavel";
   source: EditableIncome | EditableExpense;
 };
 
@@ -70,6 +71,7 @@ function Lancamentos() {
   const [editIncome, setEditIncome] = useState<EditableIncome | null>(null);
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
+  const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
 
@@ -117,6 +119,7 @@ function Lancamentos() {
         status: e.status,
         when: parseLocalDate(e.due_date).toLocaleDateString("pt-BR"),
         owner: (e as { owner?: string }).owner ?? "ele",
+        classification: (e.category === "fixa" ? "fixa" : "variavel") as "fixa" | "variavel",
         source: e as unknown as EditableExpense,
         })),
     ];
@@ -124,9 +127,13 @@ function Lancamentos() {
     return list.filter(
       (r) =>
         (ownerFilter === "todos" || r.owner === ownerFilter) &&
-        (!term || r.description.toLowerCase().includes(term) || r.category.toLowerCase().includes(term)),
+        (classFilter === "todas" || r.classification === classFilter) &&
+        (!term ||
+          r.description.toLowerCase().includes(term) ||
+          r.category.toLowerCase().includes(term) ||
+          (r.classification === "fixa" ? "fixa" : r.classification ? "variável variavel" : "").includes(term)),
     );
-  }, [income, expenses, ownerFilter, q, year, month, cursor]);
+  }, [income, expenses, ownerFilter, classFilter, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
