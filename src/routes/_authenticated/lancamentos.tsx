@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useIncome, useExpenses, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
+import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,11 @@ import { AddExpenseDialog, type EditableExpense } from "@/components/AddExpenseD
 import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
-import { parseLocalDate } from "@/lib/finance";
+import { repeatsMonthly } from "@/lib/finance";
+import { monthlyEntries } from "@/lib/monthly-report";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
@@ -35,6 +39,9 @@ type Row = {
   amount: number;
   status: string;
   when: string;
+  day: number;
+  paid: boolean;
+  recurring: boolean;
   owner: string;
   classification?: "fixa" | "variavel";
   source: EditableIncome | EditableExpense;
@@ -42,6 +49,7 @@ type Row = {
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CAT_DOT: Record<string, string> = {
   salario: "bg-cat-entrada",
   plantao: "bg-cat-entrada",
@@ -75,54 +83,25 @@ function Lancamentos() {
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
 
+  const { data: transactions = [] } = useTransactions();
+  const qc = useQueryClient();
+  const [toggling, setToggling] = useState<string | null>(null);
   const rows = useMemo<Row[]>(() => {
-    const inMonth = (iso: string | null) => {
-      if (!iso) return false;
-      const d = parseLocalDate(iso);
-      return d.getFullYear() === year && d.getMonth() === month;
-    };
-
-    const list: Row[] = [
-      ...income
-        .filter((i) => {
-          if (!i.reference_month) return i.recurring;
-          const reference = parseLocalDate(i.reference_month);
-          const referenceMonth = new Date(reference.getFullYear(), reference.getMonth(), 1).getTime();
-          return i.recurring ? referenceMonth <= cursor.getTime() : inMonth(i.reference_month);
-        })
-        .map((i) => ({
-          id: i.id,
-          table: "income" as const,
-          type: "entrada" as const,
-          description: i.name,
-          category: i.category_label || i.kind,
-          amount: Number(i.amount),
-          status: i.status,
-          when: i.reference_month ? String(i.reference_month).slice(0, 7) : "recorrente",
-          owner: (i as { owner?: string }).owner ?? "ele",
-          source: i as unknown as EditableIncome,
-        })),
-      ...expenses
-        .filter((e) => {
-          const recurring = e.category === "fixa" || e.category === "parcelada";
-          const due = parseLocalDate(e.due_date);
-          const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
-          return recurring ? dueMonth <= cursor.getTime() : inMonth(e.due_date);
-        })
-        .map((e) => ({
-        id: e.id,
-        table: "expenses" as const,
-        type: "saida" as const,
-        description: e.name,
-        category: e.category_label || e.category,
-        amount: Number(e.amount),
-        status: e.status,
-        when: parseLocalDate(e.due_date).toLocaleDateString("pt-BR"),
-        owner: (e as { owner?: string }).owner ?? "ele",
-        classification: (e.category === "fixa" ? "fixa" : "variavel") as "fixa" | "variavel",
-        source: e as unknown as EditableExpense,
-        })),
-    ];
+    const monthTx = transactions.filter((t) => { const d = new Date(t.occurred_at); return d.getFullYear() === year && d.getMonth() === month; });
+    const list: Row[] = monthlyEntries(income, expenses, cursor).map((entry) => {
+      const isIncome = entry.type === "receita";
+      const src = isIncome ? income.find((i) => i.id === entry.id) : expenses.find((e) => e.id === entry.id);
+      const recurring = isIncome ? Boolean((src as { recurring?: boolean })?.recurring) : repeatsMonthly(src as never);
+      const paid = monthTx.some((t) => t.reference_id === entry.id && t.kind === entry.type);
+      return {
+        id: entry.id, table: isIncome ? "income" as const : "expenses" as const, type: isIncome ? "entrada" as const : "saida" as const,
+        description: entry.description, category: entry.category, amount: entry.amount,
+        status: paid ? (isIncome ? "recebido" : "pago") : (isIncome ? "previsto" : "pendente"),
+        when: new Date(year, month, entry.day).toLocaleDateString("pt-BR"), day: entry.day, paid, recurring,
+        owner: entry.owner, classification: isIncome ? undefined : (entry.fixed ? "fixa" as const : "variavel" as const),
+        source: src as unknown as EditableIncome | EditableExpense,
+      };
+    }).sort((x, y) => x.day - y.day || x.description.localeCompare(y.description));
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
@@ -133,20 +112,35 @@ function Lancamentos() {
           r.category.toLowerCase().includes(term) ||
           (r.classification === "fixa" ? "fixa" : r.classification ? "variável variavel" : "").includes(term)),
     );
-  }, [income, expenses, ownerFilter, classFilter, q, year, month, cursor]);
+  }, [income, expenses, transactions, ownerFilter, classFilter, q, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
-  const groupedRows = useMemo(() => {
-    const group = (type: "entrada" | "saida") =>
-      Object.entries(
-        rows.filter((row) => row.type === type).reduce<Record<string, Row[]>>((groups, row) => {
-          (groups[row.category] ??= []).push(row);
-          return groups;
-        }, {}),
-      ).sort(([a], [b]) => a.localeCompare(b));
-    return { entradas: group("entrada"), saidas: group("saida") };
-  }, [rows]);
+  const togglePaid = async (r: Row) => {
+    setToggling(`${r.table}-${r.id}`);
+    try {
+      const kind = r.type === "entrada" ? "receita" : "despesa";
+      const start = new Date(year, month, 1).toISOString(); const end = new Date(year, month + 1, 1).toISOString();
+      if (r.paid) {
+        const { error } = await supabase.from("transactions").delete().eq("reference_id", r.id).eq("kind", kind).gte("occurred_at", start).lt("occurred_at", end);
+        if (error) throw error;
+      } else {
+        const { data: u } = await supabase.auth.getUser();
+        if (!u.user) throw new Error("Sem sessão");
+        const { error } = await supabase.from("transactions").insert({ user_id: u.user.id, kind, reference_id: r.id, owner: r.owner, description: r.description,
+          amount: kind === "receita" ? r.amount : -r.amount, occurred_at: new Date(year, month, r.day, 12).toISOString() });
+        if (error) throw error;
+      }
+      if (!r.recurring) {
+        const status = r.paid ? (r.table === "income" ? "previsto" : "pendente") : (r.table === "income" ? "recebido" : "pago");
+        const { error } = await supabase.from(r.table).update({ status } as never).eq("id", r.id);
+        if (error) throw error;
+      }
+      toast.success(r.paid ? "Marcado como não pago" : r.type === "entrada" ? "Marcado como recebido" : "Marcado como pago");
+      qc.invalidateQueries();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro ao atualizar"); }
+    finally { setToggling(null); }
+  };
 
   const remove = (r: Row) =>
     del.mutate(
@@ -250,55 +244,39 @@ function Lancamentos() {
       {rows.length === 0 && (
         <Card className="p-10 text-center text-sm text-muted-foreground shadow-none">Nenhum lançamento encontrado.</Card>
       )}
-      {([
-        ["Receitas", groupedRows.entradas, "text-success"],
-        ["Gastos", groupedRows.saidas, "text-danger"],
-      ] as const).map(([title, groups, tone]) => groups.length > 0 && (
-        <section key={title} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className={`text-sm font-semibold ${tone}`}>{title}</h2>
-            <span className="text-xs text-muted-foreground">{groups.length} categorias</span>
-          </div>
-          {groups.map(([category, entries]) => (
-            <Card key={`${title}-${category}`} className="overflow-hidden p-0 shadow-none">
-              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
-                <div className="flex items-center gap-2 text-sm font-semibold capitalize">
-                  <span className={`h-2.5 w-2.5 rounded-full ${CAT_DOT[category] ?? "bg-muted-foreground"}`} />
-                  {category}
-                </div>
-                <span className={`text-sm font-semibold tabular-nums ${tone}`}>
-                  {brl(entries.reduce((sum, entry) => sum + entry.amount, 0))}
-                </span>
-              </div>
-              <ul className="divide-y divide-border">
-                {entries.map((r) => (
-                  <li key={`${r.table}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
+      {rows.length > 0 && (
+        <Card className="overflow-hidden p-0 shadow-none">
+          <ul className="divide-y divide-border">
+            {rows.map((r) => (
+              <li key={`${r.table}-${r.id}`} className={`flex flex-wrap items-center gap-3 px-4 py-3 ${r.paid ? "" : "opacity-80"}`}>
                     <OwnerIcon owner={r.owner} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{r.description}</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground capitalize">{r.status} · {r.when}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground"><span className="capitalize">{r.when} · {r.category}</span></div>
                       {r.classification && (
                         <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${r.classification === "fixa" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                           {r.classification === "fixa" ? "Fixa" : "Variável"}
                         </span>
                       )}
                     </div>
-                    <span className={`shrink-0 text-sm font-semibold tabular-nums ${tone}`}>
+                    <span className={`shrink-0 text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>
                       {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
                     </span>
+                    <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 shrink-0 rounded-full px-3 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
+                      {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))}
-        </section>
-      ))}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+      <p className="text-xs text-muted-foreground">Lançamentos em ordem de data. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
       <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
