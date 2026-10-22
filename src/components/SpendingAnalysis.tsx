@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { analyzeSpending } from "@/lib/ai-finance.functions";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
+import { FinanceChat } from "@/components/FinanceChat";
 import { Sparkles, RefreshCw } from "lucide-react";
 
 export function SpendingAnalysis({ signature }: { signature: string }) {
@@ -35,5 +36,6 @@ export function SpendingAnalysis({ signature }: { signature: string }) {
       {result.data.warnings.map((warning, i) => <p key={i} className="text-xs text-muted-foreground">{warning}</p>)}
       <p className="text-xs text-muted-foreground">Estimativa até o fim do mês; receitas previstas não são saldo disponível.</p>
     </>}
+    <FinanceChat />
   </section>;
 }

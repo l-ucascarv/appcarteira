@@ -49,7 +49,7 @@ export function AddExpenseDialog({ open, onOpenChange, entry }: { open: boolean;
       const args = {
         p_type: "despesa", p_name: name, p_amount: Number(amount), p_date: dueDate,
         p_category: category, p_label: categoryLabel || category, p_owner: owner,
-        p_recurring: category === "fixa" || category === "parcelada", p_realized: realized && dueDate <= today,
+        p_recurring: category === "fixa" || category === "parcelada" || Number(instTot) > 1, p_realized: realized && dueDate <= today,
         p_installment_current: instCur ? Number(instCur) : undefined,
         p_installment_total: instTot ? Number(instTot) : undefined, p_note: note || undefined,
       };

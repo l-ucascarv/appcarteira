@@ -1,4 +1,4 @@
-import { parseLocalDate, type Income, type Expense, type Transaction } from "./finance";
+import { parseLocalDate, repeatsMonthly, installmentActive, type Income, type Expense, type Transaction } from "./finance";
 
 export type ReportEntry = {
   id: string; type: "receita" | "despesa"; description: string; category: string;
@@ -18,11 +18,12 @@ export function monthlyEntries(income: Income[], expenses: Expense[], month: Dat
   }
   for (const entry of expenses) {
     const date = parseLocalDate(entry.due_date);
-    const recurring = entry.category === "fixa" || entry.category === "parcelada";
+    const recurring = repeatsMonthly(entry);
     const elapsed = monthNumber(month) - monthNumber(date);
     if (recurring ? elapsed < 0 : !sameMonth(date, month)) continue;
-    if (entry.category === "parcelada" && entry.installment_total && entry.installment_current && entry.installment_current + elapsed > entry.installment_total) continue;
-    result.push({ id: entry.id, type: "despesa", description: entry.name, category: entry.category_label || entry.category,
+    if (recurring && !installmentActive(entry, elapsed)) continue;
+    const parcel = Number(entry.installment_total) > 1 ? ` (${(Number(entry.installment_current) || 1) + Math.max(0, elapsed)}/${entry.installment_total})` : "";
+    result.push({ id: entry.id, type: "despesa", description: entry.name + parcel, category: entry.category_label || entry.category,
       amount: Number(entry.amount), day: occurrenceDay(recurring ? entry.due_day : date.getDate(), month), owner: (entry as Expense & { owner?: string }).owner ?? "ele", fixed: entry.category === "fixa" });
   }
   return result;
