@@ -133,7 +133,7 @@ function Lancamentos() {
       }
       if (!r.recurring) {
         const status = r.paid ? (r.table === "income" ? "previsto" : "pendente") : (r.table === "income" ? "recebido" : "pago");
-        const { error } = await supabase.from(r.table).update({ status }).eq("id", r.id);
+        const { error } = await supabase.from(r.table).update({ status } as never).eq("id", r.id);
         if (error) throw error;
       }
       toast.success(r.paid ? "Marcado como não pago" : r.type === "entrada" ? "Marcado como recebido" : "Marcado como pago");
