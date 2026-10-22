@@ -90,13 +90,24 @@ export function computeBalances(
   return { saldoConta, saldoReservado, saldoComprometido, saldoLivre };
 }
 
+/** Expense repeats monthly: fixed, "parcelada", or any expense with installments informed. */
+export function repeatsMonthly(e: Pick<Expense, "category" | "installment_total">) {
+  return e.category === "fixa" || e.category === "parcelada" || Number(e.installment_total) > 1;
+}
+/** False when an installment expense has already ended in the given month offset. */
+export function installmentActive(e: Pick<Expense, "installment_total" | "installment_current">, elapsedMonths: number) {
+  const total = Number(e.installment_total);
+  if (!total) return true;
+  return (Number(e.installment_current) || 1) + elapsedMonths <= total;
+}
+
 export function currentMonthExpenses(expenses: Expense[], date = new Date()): Expense[] {
   const selectedMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
   return expenses.filter((expense) => {
     const due = parseLocalDate(expense.due_date);
     const dueMonth = new Date(due.getFullYear(), due.getMonth(), 1).getTime();
-    const recurring = expense.category === "fixa" || expense.category === "parcelada";
-    return recurring ? dueMonth <= selectedMonth : dueMonth === selectedMonth;
+    const elapsed = (date.getFullYear() - due.getFullYear()) * 12 + date.getMonth() - due.getMonth();
+    return repeatsMonthly(expense) ? dueMonth <= selectedMonth && installmentActive(expense, elapsed) : dueMonth === selectedMonth;
   });
 }
 

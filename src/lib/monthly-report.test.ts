@@ -40,3 +40,11 @@ describe("painéis mensais", () => {
     expect(categoryTotals(entries, "receita")[0]).toMatchObject({ category: "Trabalho", amount: 1000, percent: 100 });
   });
 });
+describe("parcelas de despesa variável", () => {
+  it("3 parcelas aparecem nos 3 meses seguintes e param depois", async () => {
+    const { monthlyEntries } = await import("./monthly-report");
+    const e = { id: "tv", name: "TV", amount: 100, category: "variavel", due_date: "2026-10-10", due_day: 10, status: "pendente", installment_current: 1, installment_total: 3, note: null } as never;
+    const count = (m: number) => monthlyEntries([], [e], new Date(2026, m, 1)).length;
+    expect([count(9), count(10), count(11), count(12)]).toEqual([1, 1, 1, 0]);
+  });
+});
