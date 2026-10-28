@@ -190,7 +190,7 @@ function Lancamentos() {
       <header className="flex items-center justify-between rounded-2xl border bg-card p-4 shadow-sm">
         <div>
           <p className="text-xs text-muted-foreground">Lançamentos</p>
-          <h1 className="text-xl font-bold capitalize sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
+          <h1 className="text-xl font-bold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="outline" onClick={() => shift(-1)} aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></Button>
