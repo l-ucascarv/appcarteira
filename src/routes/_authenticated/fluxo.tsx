@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIncome, useExpenses, useTransactions } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { OwnerIcon } from "@/components/OwnerBadge";
 import { horizonMonth } from "@/lib/monthly-report";
 
 export const Route = createFileRoute("/_authenticated/fluxo")({
+  beforeLoad: () => { throw redirect({ to: "/lancamentos", replace: true }); },
   head: () => ({
     meta: [
       { title: "Fluxo de Caixa — Meu Caixa" },
