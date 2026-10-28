@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { brl } from "@/lib/format";
@@ -82,6 +81,14 @@ function Lancamentos() {
   const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
+  const [qType, setQType] = useState<"entrada" | "saida">("saida");
+  const [qAmount, setQAmount] = useState("");
+  const [qName, setQName] = useState("");
+  const [qCat, setQCat] = useState("");
+  const [qClass, setQClass] = useState<"fixa" | "variavel">("variavel");
+  const [qOwner, setQOwner] = useState<Owner>("ele");
+  const [qDate, setQDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [saving, setSaving] = useState(false);
 
   const { data: transactions = [] } = useTransactions();
   const qc = useQueryClient();
@@ -156,110 +163,124 @@ function Lancamentos() {
     });
   };
 
+  const today = new Date().toLocaleDateString("en-CA");
+  const knownCategories = Array.from(new Set([...income, ...expenses].map((e) => (e as { category_label?: string | null }).category_label).filter(Boolean) as string[])).sort();
+  const quickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!qAmount || !qName) return;
+    setSaving(true);
+    try {
+      const isIn = qType === "entrada";
+      const category = isIn ? "extra" : qClass;
+      const { error } = await supabase.rpc("save_financial_entry", {
+        p_type: isIn ? "receita" : "despesa", p_name: qName, p_amount: Number(qAmount), p_date: qDate,
+        p_category: category, p_label: qCat || category, p_owner: qOwner,
+        p_recurring: !isIn && qClass === "fixa", p_realized: false,
+      });
+      if (error) throw error;
+      toast.success(isIn ? "Entrada lançada" : "Saída lançada");
+      setQAmount(""); setQName(""); setQCat("");
+      qc.invalidateQueries();
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Erro ao lançar"); }
+    finally { setSaving(false); }
+  };
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="flex items-center justify-between rounded-2xl border bg-card p-4 shadow-sm">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Adicionar</h1>
-          
+          <p className="text-xs text-muted-foreground">Lançamentos</p>
+          <h1 className="text-xl font-bold capitalize sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
         </div>
-        <Button variant="ghost" size="sm" className="rounded-full text-danger" onClick={removeAll} disabled={delAll.isPending}>
-          <Trash2 className="mr-1 h-4 w-4" /> Limpar tudo
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="rounded-2xl p-4 shadow-none">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-cat-entrada" /> Entradas
-          </div>
-          <div className="mt-1 text-lg font-semibold tabular-nums text-success">{brl(totalIn)}</div>
-        </Card>
-        <Card className="rounded-2xl p-4 shadow-none">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-cat-saida" /> Saídas
-          </div>
-          <div className="mt-1 text-lg font-semibold tabular-nums text-danger">{brl(totalOut)}</div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => shift(-1)} aria-label="Mês anterior">
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <div className="text-center text-base font-semibold tracking-tight">
-          {MONTHS[month]}/{String(year).slice(2)}
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={() => shift(-1)} aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="min-w-[72px] rounded-md bg-muted px-3 py-1.5 text-center text-sm font-semibold">{MONTHS[month]}/{String(year).slice(2)}</span>
+          <Button size="sm" variant="outline" onClick={() => shift(1)} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => shift(1)} aria-label="Próximo mês">
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
-        {(["todos", ...OWNERS] as (Owner | "todos")[]).map((o) => (
-          <button
-            key={o}
-            onClick={() => setOwnerFilter(o)}
-            className={`flex items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-medium transition-colors ${
-              ownerFilter === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            {o !== "todos" && <OwnerIcon owner={o} />}
-            {o === "todos" ? "Casal" : ownerLabel(o)}
-          </button>
+      <section className="grid grid-cols-3 gap-3">
+        {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
+          <div key={l} className="rounded-2xl border bg-card p-4 shadow-sm">
+            <p className="text-xs text-muted-foreground">{l}</p>
+            <p className={`mt-1 text-base font-bold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
+          </div>
         ))}
-      </div>
+      </section>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por nome, categoria ou fixa/variável"
-          className="rounded-full pl-9"
-        />
-      </div>
+      <section className="rounded-2xl border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
+        <form onSubmit={quickAdd} className="grid gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:col-span-2">
+            {(["saida", "entrada"] as const).map((t) => (
+              <button key={t} type="button" onClick={() => setQType(t)} className={`rounded-sm py-1.5 text-sm font-medium transition-colors ${qType === t ? (t === "entrada" ? "bg-background text-success shadow-sm" : "bg-background text-danger shadow-sm") : "text-muted-foreground"}`}>
+                {t === "entrada" ? "Entrada" : "Saída"}
+              </button>
+            ))}
+          </div>
+          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder="Valor (R$)" value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="sm:col-span-2" />
+          <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
+          <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
+          <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />
+          <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
+          {qType === "saida" && (
+            <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:col-span-2">
+              {(["variavel", "fixa"] as const).map((c) => (
+                <button key={c} type="button" onClick={() => setQClass(c)} className={`rounded-sm py-1.5 text-sm font-medium ${qClass === c ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{c === "fixa" ? "Fixa" : "Variável"}</button>
+              ))}
+            </div>
+          )}
+          <div className={`grid grid-cols-2 gap-1 rounded-md bg-muted p-1 ${qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}`}>
+            {OWNERS.map((o) => (
+              <button key={o} type="button" onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</button>
+            ))}
+          </div>
+          <Button type="submit" disabled={saving} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
+        </form>
+        <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
+          <button type="button" className="underline-offset-2 hover:underline" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções (parcelas, foto, IA)</button>
+          <span>· {qDate > today ? "Futuro" : "Pendente"} até marcar como pago</span>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
-        {([["todas", "Todas"], ["fixa", "Fixas"], ["variavel", "Variáveis"]] as const).map(([value, label]) => (
-          <button
-            key={value}
-            onClick={() => setClassFilter(value)}
-            className={`rounded-full py-1.5 text-sm font-medium transition-colors ${classFilter === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex gap-2">
-        <Button size="sm" className="flex-1 rounded-full" onClick={() => setAddIncome(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Entrada
-        </Button>
-        <Button size="sm" variant="outline" className="flex-1 rounded-full" onClick={() => setAddExpense(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Saída
-        </Button>
-      </div>
+      <section className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Lançamentos do mês</h2>
+          <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="pl-9" />
+          </div>
+          <select aria-label="Quem lançou" value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value as Owner | "todos")} className="h-10 rounded-md border bg-background px-3 text-sm">
+            <option value="todos">Casal</option>
+            {OWNERS.map((o) => <option key={o} value={o}>{ownerLabel(o)}</option>)}
+          </select>
+          <select aria-label="Classificação" value={classFilter} onChange={(e) => setClassFilter(e.target.value as typeof classFilter)} className="h-10 rounded-md border bg-background px-3 text-sm">
+            <option value="todas">Todas</option><option value="fixa">Fixas</option><option value="variavel">Variáveis</option>
+          </select>
+        </div>
 
       {rows.length === 0 && (
-        <Card className="p-10 text-center text-sm text-muted-foreground shadow-none">Nenhum lançamento encontrado.</Card>
+        <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</p>
       )}
       {rows.length > 0 && (
-        <Card className="overflow-hidden p-0 shadow-none">
+        <div className="overflow-hidden rounded-xl border">
           <ul className="divide-y divide-border">
             {rows.map((r) => (
               <li key={`${r.table}-${r.id}`} className={`flex flex-wrap items-center gap-3 px-4 py-3 ${r.paid ? "" : "opacity-80"}`}>
                     <OwnerIcon owner={r.owner} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{r.description}</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground"><span className="capitalize">{r.when} · {r.category}</span></div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"><span>{r.when}</span><span className="rounded-md bg-muted px-1.5 py-0.5 font-medium capitalize text-foreground">{r.category}</span>
                       {r.classification && (
-                        <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${r.classification === "fixa" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium ${r.classification === "fixa" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                           {r.classification === "fixa" ? "Fixa" : "Variável"}
                         </span>
-                      )}
+                      )}</div>
                     </div>
-                    <span className={`shrink-0 text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>
+                    <span className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>
                       {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
                     </span>
                     <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 shrink-0 rounded-full px-3 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
@@ -274,9 +295,10 @@ function Lancamentos() {
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
       )}
-      <p className="text-xs text-muted-foreground">Lançamentos em ordem de data. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
+      <p className="text-xs text-muted-foreground">Em ordem de data. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
+      </section>
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
       <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
