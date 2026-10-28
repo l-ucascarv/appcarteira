@@ -5,6 +5,13 @@ const month = new Date(2026, 9, 1);
 const expense = (id: string, amount: number, category: string, due_date: string, status: Expense["status"] = "pendente"): Expense => ({ id, name: id, amount, category, due_date, due_day: Number(due_date.slice(8)), status, installment_current: null, installment_total: null, note: null });
 const income: Income[] = [{ id: "salary", name: "Salário", amount: 1000, kind: "salario", category_label: "Trabalho", reference_month: "2026-10-20", recurring: false, status: "previsto", received_at: null }];
 describe("painéis mensais", () => {
+  it("receita fixa aparece mensalmente a partir da data inicial, mesmo pendente", () => {
+    const salary = { ...income[0], recurring: true };
+    expect(monthlyEntries([salary], [], new Date(2026, 8, 1))).toEqual([]);
+    for (const m of [9, 10, 11, 12]) {
+      expect(monthlyEntries([salary], [], new Date(2026, m, 1))).toEqual([expect.objectContaining({ id: "salary", amount: 1000, day: 20 })]);
+    }
+  });
   it("comprometido em Saldos acompanha inclusão, edição e exclusão de fixos", () => {
     const total = (expenses: Expense[]) => fixedMonthlyExpenses(expenses, month).reduce((sum, entry) => sum + entry.amount, 0);
     const rent = expense("aluguel", 500, "fixa", "2026-09-10", "pago");

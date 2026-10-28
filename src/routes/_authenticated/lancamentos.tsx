@@ -14,6 +14,8 @@ import { monthlyEntries } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
+import { EntryAiTools } from "@/components/EntryAiTools";
+import { quickEntrySchedule, type EntryClassification } from "@/lib/quick-entry";
 
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
@@ -85,7 +87,8 @@ function Lancamentos() {
   const [qAmount, setQAmount] = useState("");
   const [qName, setQName] = useState("");
   const [qCat, setQCat] = useState("");
-  const [qClass, setQClass] = useState<"fixa" | "variavel">("variavel");
+  const [qClass, setQClass] = useState<EntryClassification | null>(null);
+  const [qInstallments, setQInstallments] = useState("");
   const [qOwner, setQOwner] = useState<Owner>("ele");
   const [qDate, setQDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [saving, setSaving] = useState(false);
@@ -168,18 +171,18 @@ function Lancamentos() {
   const quickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!qAmount || !qName) return;
+    if (!qClass) { toast.error("Selecione Fixa ou Variável."); return; }
     setSaving(true);
     try {
       const isIn = qType === "entrada";
-      const category = isIn ? "extra" : qClass;
+      const schedule = quickEntrySchedule(qType, qClass, qInstallments);
       const { error } = await supabase.rpc("save_financial_entry", {
         p_type: isIn ? "receita" : "despesa", p_name: qName, p_amount: Number(qAmount), p_date: qDate,
-        p_category: category, p_label: qCat || category, p_owner: qOwner,
-        p_recurring: !isIn && qClass === "fixa", p_realized: false,
+        ...schedule, p_label: qCat || (isIn ? "Receita" : qClass), p_owner: qOwner,
       });
       if (error) throw error;
       toast.success(isIn ? "Entrada lançada" : "Saída lançada");
-      setQAmount(""); setQName(""); setQCat("");
+      setQAmount(""); setQName(""); setQCat(""); setQInstallments(""); setQClass(null);
       qc.invalidateQueries();
     } catch (err) { toast.error(err instanceof Error ? err.message : "Erro ao lançar"); }
     finally { setSaving(false); }
@@ -209,36 +212,52 @@ function Lancamentos() {
       </section>
 
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <h2 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
+          <div className="max-w-[180px]">
+            <EntryAiTools photoOnly type={qType === "entrada" ? "receita" : "despesa"} description={qName} amount={qAmount} onSuggestion={(suggestion) => {
+              setQName(suggestion.description); setQAmount(suggestion.amount !== null ? String(suggestion.amount) : "");
+              setQCat(suggestion.category); setQDate(suggestion.date ?? "");
+            }} />
+          </div>
+        </div>
         <form onSubmit={quickAdd} className="grid gap-3 sm:grid-cols-6">
           <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:col-span-2">
             {(["saida", "entrada"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => setQType(t)} className={`rounded-sm py-1.5 text-sm font-medium transition-colors ${qType === t ? (t === "entrada" ? "bg-background text-success shadow-sm" : "bg-background text-danger shadow-sm") : "text-muted-foreground"}`}>
+              <Button key={t} type="button" variant="ghost" aria-pressed={qType === t} onClick={() => { if (qType !== t) { setQType(t); setQClass(null); setQInstallments(""); } }} className={`rounded-sm py-1.5 text-sm font-medium transition-colors ${qType === t ? (t === "entrada" ? "bg-background text-success shadow-sm" : "bg-background text-danger shadow-sm") : "text-muted-foreground"}`}>
                 {t === "entrada" ? "Entrada" : "Saída"}
-              </button>
+              </Button>
             ))}
           </div>
-          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder="Valor (R$)" value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="sm:col-span-2" />
+          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="sm:col-span-2" />
           <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
           <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
           <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />
           <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
-          {qType === "saida" && (
-            <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:col-span-2">
+          <fieldset className="space-y-2 sm:col-span-6">
+            <legend className="text-sm font-medium">{qType === "saida" ? "A despesa é fixa ou variável?" : "A receita é fixa ou variável?"}</legend>
+            <div className="grid max-w-sm grid-cols-2 gap-1 rounded-md bg-muted p-1">
               {(["variavel", "fixa"] as const).map((c) => (
-                <button key={c} type="button" onClick={() => setQClass(c)} className={`rounded-sm py-1.5 text-sm font-medium ${qClass === c ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{c === "fixa" ? "Fixa" : "Variável"}</button>
+                <Button key={c} type="button" variant="ghost" aria-pressed={qClass === c} onClick={() => setQClass(c)} className={`rounded-sm py-1.5 text-sm font-medium ${qClass === c ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{c === "fixa" ? "Fixa" : "Variável"}</Button>
               ))}
+            </div>
+          </fieldset>
+          {qType === "saida" && qClass === "variavel" && (
+            <div className="space-y-1.5 sm:col-span-6">
+              <label htmlFor="quick-installments" className="text-sm font-medium">Quantidade de parcelas</label>
+              <Input id="quick-installments" type="number" min="1" step="1" placeholder="1 (à vista)" value={qInstallments} onChange={(e) => setQInstallments(e.target.value)} className="max-w-sm" />
+              {Number(qInstallments) > 1 && <p className="text-xs text-muted-foreground">{qInstallments} × {brl(Number(qAmount) || 0)} · Total {brl((Number(qAmount) || 0) * Number(qInstallments))}</p>}
             </div>
           )}
           <div className={`grid grid-cols-2 gap-1 rounded-md bg-muted p-1 ${qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}`}>
             {OWNERS.map((o) => (
-              <button key={o} type="button" onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</button>
+              <Button key={o} type="button" variant="ghost" aria-pressed={qOwner === o} onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</Button>
             ))}
           </div>
-          <Button type="submit" disabled={saving} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
+          <Button type="submit" disabled={saving || !qClass} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
         </form>
         <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
-          <button type="button" className="underline-offset-2 hover:underline" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções (parcelas, foto, IA)</button>
+          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções</Button>
           <span>· {qDate > today ? "Futuro" : "Pendente"} até marcar como pago</span>
         </div>
       </section>
