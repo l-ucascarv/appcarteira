@@ -5,7 +5,6 @@ import {
   PlusCircle,
   CalendarClock,
   CalendarCheck,
-  BarChart3,
   PiggyBank,
   LogOut,
   Moon,
@@ -25,7 +24,6 @@ const NAV = [
 const ACTIONS = [
   { to: "/lancamentos", label: "adicionar", icon: PlusCircle },
   { to: "/calendario", label: "ir pra hoje", icon: CalendarClock },
-  { to: "/fluxo", label: "horizonte", icon: BarChart3 },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -127,8 +125,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Bottom nav (mobile) */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-background/85 px-2 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-6">
-          {[NAV[0], NAV[1], NAV[2], ACTIONS[2], ACTIONS[0], ACTIONS[1]].map((n) => {
+        <div className="mx-auto grid max-w-lg grid-cols-5">
+          {[NAV[0], NAV[1], NAV[2], ACTIONS[0], ACTIONS[1]].map((n) => {
             const active = loc.pathname === n.to;
             const Icon = n.icon;
             return (

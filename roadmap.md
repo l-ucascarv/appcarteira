@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Manter foto no canto superior do lançamento e oferecer classificação e parcelas diretamente.
+- [ ] Repetir receitas fixas nos próximos meses e testar receitas e parcelas.
+- [ ] Retirar Horizonte e validar o lançamento autenticado.
+
 - [x] Separar Tags de Adicionar e mostrar ranking mensal de categorias.
 - [x] Criar Comprometido com custo fixo mensal e vencimentos.
 - [x] Corrigir Horizonte com saldo anterior + todas as entradas - todas as saídas e validar.

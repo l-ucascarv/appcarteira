@@ -6,7 +6,7 @@ import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export type EntrySuggestion = NonNullable<Awaited<ReturnType<typeof suggestEntry>>["data"]>;
-export function EntryAiTools({ type, description, amount, onSuggestion }: { type: "receita" | "despesa"; description: string; amount: string; onSuggestion: (value: EntrySuggestion, fromPhoto: boolean) => void }) {
+export function EntryAiTools({ type, description, amount, onSuggestion, photoOnly = false }: { type: "receita" | "despesa"; description: string; amount: string; onSuggestion: (value: EntrySuggestion, fromPhoto: boolean) => void; photoOnly?: boolean }) {
   const suggest = useServerFn(suggestEntry);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -33,12 +33,12 @@ export function EntryAiTools({ type, description, amount, onSuggestion }: { type
   }
   return <div className="space-y-2">
     <div className="flex flex-wrap gap-2">
-      <Button type="button" size="sm" variant="outline" disabled={busy || !description.trim() || Number(amount) <= 0} onClick={() => run(null)}><Sparkles className="mr-2 h-4 w-4" />Sugerir categoria</Button>
-      <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => fileInput.current?.click()}><Camera className="mr-2 h-4 w-4" />Foto do comprovante</Button>
+      {!photoOnly && <Button type="button" size="sm" variant="outline" disabled={busy || !description.trim() || Number(amount) <= 0} onClick={() => run(null)}><Sparkles className="mr-2 h-4 w-4" />Sugerir categoria</Button>}
+      <Button type="button" size={photoOnly ? "icon" : "sm"} variant="outline" aria-label="Lançar pela foto" title="Lançar pela foto" disabled={busy} onClick={() => fileInput.current?.click()}><Camera className={photoOnly ? "h-4 w-4" : "mr-2 h-4 w-4"} />{!photoOnly && "Foto do comprovante"}</Button>
       <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
     </div>
     {preview && <img src={preview} alt="Comprovante selecionado" className="h-24 max-w-full rounded-md object-contain" />}
     {busy && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Analisando…</p>}
-    {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
+    {message && !photoOnly && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
   </div>;
 }
