@@ -19,3 +19,4 @@
 - Removed financial views retain a redirect to entry management so existing URLs remain usable without exposing removed navigation.
 - Entry management uses a tested direction-aware chronology comparator and groups occurrences by scheduled date and recorded time; daily and opening balances use shared actual-movement helpers independently of list filters, without inserting carryover transactions.
 - Mobile navigation reserves safe-area-aware content space and uses weighted columns so all destination labels remain visible on narrow iPhone screens.
+- Financial read queries reuse a short-lived cache across tabs, with mutation invalidation and identity-change cache teardown; navigation preloads visible destinations and entry dialogs load on demand to avoid repeated work without weakening the managed auth gate.

@@ -201,8 +201,8 @@ function Dashboard() {
                 <XAxis dataKey="m" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
-                <Bar dataKey="Receitas" fill="var(--color-success)" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Despesas" fill="var(--color-danger)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Receitas" fill="var(--color-success)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="Despesas" fill="var(--color-danger)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -217,7 +217,7 @@ function Dashboard() {
                 <XAxis dataKey="i" hide />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => brl(Number(v))} contentStyle={{ borderRadius: 12 }} />
-                <Line type="monotone" dataKey="saldo" stroke="var(--color-foreground)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="saldo" stroke="var(--color-foreground)" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { brl } from "@/lib/format";
-import { AddIncomeDialog, type EditableIncome } from "@/components/AddIncomeDialog";
-import { AddExpenseDialog, type EditableExpense } from "@/components/AddExpenseDialog";
+import type { EditableIncome } from "@/components/AddIncomeDialog";
+import type { EditableExpense } from "@/components/AddExpenseDialog";
 import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { EntryAiTools } from "@/components/EntryAiTools";
 import { quickEntrySchedule, type EntryClassification } from "@/lib/quick-entry";
+
+const AddIncomeDialog = lazy(() => import("@/components/AddIncomeDialog").then((module) => ({ default: module.AddIncomeDialog })));
+const AddExpenseDialog = lazy(() => import("@/components/AddExpenseDialog").then((module) => ({ default: module.AddExpenseDialog })));
 
 export const Route = createFileRoute("/_authenticated/lancamentos")({
   head: () => ({
@@ -100,11 +103,18 @@ function Lancamentos() {
   const [toggling, setToggling] = useState<string | null>(null);
   const rows = useMemo<Row[]>(() => {
     const monthTx = transactions.filter((t) => { const d = new Date(t.occurred_at); return d.getFullYear() === year && d.getMonth() === month; });
+    const incomeById = new Map(income.map((entry) => [entry.id, entry]));
+    const expenseById = new Map(expenses.map((entry) => [entry.id, entry]));
+    const movementByEntry = new Map<string, typeof monthTx[number]>();
+    for (const movement of monthTx) {
+      const key = `${movement.kind}-${movement.reference_id}`;
+      if (!movementByEntry.has(key)) movementByEntry.set(key, movement);
+    }
     const list: Row[] = monthlyEntries(income, expenses, cursor).map((entry) => {
       const isIncome = entry.type === "receita";
-      const src = isIncome ? income.find((i) => i.id === entry.id) : expenses.find((e) => e.id === entry.id);
+      const src = isIncome ? incomeById.get(entry.id) : expenseById.get(entry.id);
       const recurring = isIncome ? Boolean((src as { recurring?: boolean })?.recurring) : repeatsMonthly(src as never);
-      const movement = monthTx.find((t) => t.reference_id === entry.id && t.kind === entry.type);
+      const movement = movementByEntry.get(`${entry.type}-${entry.id}`);
       const paid = Boolean(movement);
       const recordedAt = movement?.occurred_at ?? (src as { created_at?: string } | undefined)?.created_at;
       return {
@@ -339,10 +349,12 @@ function Lancamentos() {
       <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
       </section>
 
-      <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
-      <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />
-      <AddIncomeDialog open={!!editIncome} entry={editIncome} onOpenChange={(v) => !v && setEditIncome(null)} />
-      <AddExpenseDialog open={!!editExpense} entry={editExpense} onOpenChange={(v) => !v && setEditExpense(null)} />
+      <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Abrindo lançamento…</p>}>
+        {addIncome && <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />}
+        {addExpense && <AddExpenseDialog open={addExpense} onOpenChange={setAddExpense} />}
+        {editIncome && <AddIncomeDialog open entry={editIncome} onOpenChange={(v) => !v && setEditIncome(null)} />}
+        {editExpense && <AddExpenseDialog open entry={editExpense} onOpenChange={(v) => !v && setEditExpense(null)} />}
+      </Suspense>
     </div>
   );
 }
