@@ -1,15 +1,15 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Wallet,
   Tags,
   PlusCircle,
   CalendarClock,
   CalendarCheck,
-  PiggyBank,
   LogOut,
   Moon,
   Sun,
 } from "lucide-react";
+import logoLight from "@/assets/logo-full.png";
+import logoDark from "@/assets/logo-full-dark.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
