@@ -49,8 +49,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card/60 px-3 py-6 backdrop-blur md:flex md:flex-col">
         <div className="mb-7 px-1">
-          <img src={logoLight} alt="Meu Caixa" className="block h-10 w-auto dark:hidden" width={2048} height={1024} />
-          <img src={logoDark} alt="Meu Caixa" className="hidden h-10 w-auto dark:block" width={2048} height={1024} />
+          <img src={logoLight} alt="Meu Caixa" className="block h-10 w-auto dark:hidden" width={910} height={238} />
+          <img src={logoDark} alt="Meu Caixa" className="hidden h-10 w-auto dark:block" width={875} height={223} />
         </div>
 
         <nav className="flex flex-col gap-0.5">
@@ -98,8 +98,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <header className="mobile-top-bar sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-xl md:hidden">
         <div className="flex min-w-0 items-center">
-          <img src={logoLight} alt="Meu Caixa" className="block h-8 w-auto dark:hidden" width={2048} height={1024} />
-          <img src={logoDark} alt="Meu Caixa" className="hidden h-8 w-auto dark:block" width={2048} height={1024} />
+          <img src={logoLight} alt="Meu Caixa" className="block h-8 w-auto dark:hidden" width={910} height={238} />
+          <img src={logoDark} alt="Meu Caixa" className="hidden h-8 w-auto dark:block" width={875} height={223} />
         </div>
         <div className="flex shrink-0 gap-1">
           <Button
