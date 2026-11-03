@@ -5,6 +5,8 @@
 - [ ] Retirar Horizonte e validar o lançamento autenticado.
 - [ ] Separar lançamentos em colunas de receitas, despesas e saldo realizado de cada dia.
 - [ ] Ajustar proporções das telas e barra inferior para iPhone 15, incluindo áreas seguras e validação autenticada.
+- [ ] Exibir saldo residual realizado do mês anterior em Saldos e Adicionar, sem criar movimentação duplicada.
+- [ ] Ordenar lançamentos do mais recente ao mais antigo por data, hora e segundo.
 
 - [x] Separar Tags de Adicionar e mostrar ranking mensal de categorias.
 - [x] Criar Comprometido com custo fixo mensal e vencimentos.
