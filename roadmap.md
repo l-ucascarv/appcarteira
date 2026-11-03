@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Reduzir esperas na troca de abas sem perder atualização dos lançamentos.
+- [ ] Suavizar efeitos e verificar navegação autenticada.
+
 - [x] Adotar ordem crescente padrão com seletor decrescente e testar ambos.
 - [x] Simplificar Adicionar como extrato bancário e verificar a tela no iPhone.
 
