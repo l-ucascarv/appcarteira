@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Adotar ordem crescente padrão com seletor decrescente e testar ambos.
+- [x] Simplificar Adicionar como extrato bancário e verificar a tela no iPhone.
+
 - [x] Manter foto no canto superior do lançamento e oferecer classificação e parcelas diretamente.
 - [x] Repetir receitas fixas nos próximos meses e testar receitas e parcelas.
 - [x] Retirar Horizonte e validar o lançamento autenticado.

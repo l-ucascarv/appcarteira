@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fixedMonthlyExpenses, horizonMonth, categoryTotals, monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology } from "./monthly-report";
+import { fixedMonthlyExpenses, horizonMonth, categoryTotals, monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "./monthly-report";
 import type { Expense, Income } from "./finance";
 const month = new Date(2026, 9, 1);
 const expense = (id: string, amount: number, category: string, due_date: string, status: Expense["status"] = "pendente"): Expense => ({ id, name: id, amount, category, due_date, due_day: Number(due_date.slice(8)), status, installment_current: null, installment_total: null, note: null });
@@ -14,15 +14,18 @@ describe("painéis mensais", () => {
     expect(realizedOpeningBalance(movements, month, new Date(2026, 9, 20))).toBe(800);
     expect(realizedDailyBalances(movements, month, new Date(2026, 9, 20))[0].balance).toBe(750);
   });
-  it("ordena por dia, hora e segundo do mais recente ao mais antigo", () => {
+  it.each(["asc", "desc"] as const)("ordena por dia, hora e segundo na direção %s, crescente por padrão", (order) => {
     const records = [
       { id: "earlier-day", day: 2, at: "2026-09-01T23:59:59" },
       { id: "earlier-hour", day: 3, at: "2026-09-01T10:00:59" },
       { id: "earlier-second", day: 3, at: "2026-09-01T11:00:01" },
       { id: "latest", day: 3, at: "2026-09-01T11:00:02" },
     ];
-    expect(records.sort((a, b) => entryChronology(month, b.day, b.at) - entryChronology(month, a.day, a.at)).map((r) => r.id))
-      .toEqual(["latest", "earlier-second", "earlier-hour", "earlier-day"]);
+    const entries = records.map((r) => ({ ...r, timestamp: entryChronology(month, r.day, r.at) }));
+    const ascending = ["earlier-day", "earlier-hour", "earlier-second", "latest"];
+    expect([...entries].sort(compareEntryChronology).map((r) => r.id)).toEqual(ascending);
+    expect(entries.sort((a, b) => compareEntryChronology(a, b, order)).map((r) => r.id))
+      .toEqual(order === "asc" ? ascending : [...ascending].reverse());
   });
   it("saldo das colunas soma realizado anterior e do dia, excluindo futuros e reservas", () => {
     const result = realizedDailyBalances([

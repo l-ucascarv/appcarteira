@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
-import { monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology } from "@/lib/monthly-report";
+import { monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
@@ -81,6 +81,7 @@ function Lancamentos() {
   const [editIncome, setEditIncome] = useState<EditableIncome | null>(null);
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
@@ -115,7 +116,7 @@ function Lancamentos() {
         owner: entry.owner, classification: isIncome ? undefined : (entry.fixed ? "fixa" as const : "variavel" as const),
         source: src as unknown as EditableIncome | EditableExpense,
       };
-    }).sort((x, y) => y.timestamp - x.timestamp || y.id.localeCompare(x.id));
+    }).sort((x, y) => compareEntryChronology(x, y, sortOrder));
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
@@ -126,7 +127,7 @@ function Lancamentos() {
           r.category.toLowerCase().includes(term) ||
           (r.classification === "fixa" ? "fixa" : r.classification ? "variável variavel" : "").includes(term)),
     );
-  }, [income, expenses, transactions, ownerFilter, classFilter, q, year, month, cursor]);
+  }, [income, expenses, transactions, ownerFilter, classFilter, q, sortOrder, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -276,11 +277,11 @@ function Lancamentos() {
 
       <section className="space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Lançamentos do mês</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Extrato do mês</h2>
           <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-          <div className="relative">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+          <div className="relative col-span-2 sm:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="pl-9" />
           </div>
@@ -290,6 +291,10 @@ function Lancamentos() {
           </select>
           <select aria-label="Classificação" value={classFilter} onChange={(e) => setClassFilter(e.target.value as typeof classFilter)} className="h-10 rounded-md border bg-background px-3 text-sm">
             <option value="todas">Todas</option><option value="fixa">Fixas</option><option value="variavel">Variáveis</option>
+          </select>
+          <select aria-label="Ordem dos lançamentos" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")} className="col-span-2 h-10 rounded-md border bg-background px-3 text-sm sm:col-span-1">
+            <option value="asc">Data crescente · antigos primeiro</option>
+            <option value="desc">Data decrescente · recentes primeiro</option>
           </select>
         </div>
 
@@ -305,32 +310,33 @@ function Lancamentos() {
                 <h3 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h3>
                 <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>
               </div>
-              <div className="mb-1 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 text-xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
-                <span className="text-success">Receitas</span><span className="text-danger">Despesas</span><span className="hidden text-right text-muted-foreground sm:block">Saldo realizado</span>
+              <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] gap-4 border-b border-border pb-2 text-xs text-muted-foreground md:grid">
+                <span>Lançamento</span><span className="text-right">Receitas</span><span className="text-right">Despesas</span><span className="text-right">Situação / ações</span>
               </div>
               <ul className="divide-y divide-border">
-                {rows.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
-                  <div className={`min-w-0 ${r.type === "entrada" ? "col-start-1" : "col-start-2"}`}>
+                {rows.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] md:gap-4">
+                  <div className="min-w-0">
                     <div className="flex min-w-0 items-start gap-1.5"><OwnerIcon owner={r.owner} /><span className="min-w-0 break-words text-sm font-medium">{r.description}</span></div>
-                    <span className="mt-1 inline-block max-w-full break-words rounded bg-muted px-1.5 py-0.5 text-[11px] capitalize">{r.category}</span>
-                    {r.classification && <span className="mt-1 block text-[11px] text-muted-foreground">{r.classification === "fixa" ? "Fixa" : "Variável"}</span>}
-                    <div className={`mt-1 break-words text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>{brl(r.amount)}</div>
-                    <div className="mt-2 flex flex-wrap items-center gap-1">
-                      <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-9 px-2 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
-                        {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" title="Editar lançamento" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-danger" title="Excluir lançamento" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">{r.category}{r.classification ? ` · ${r.classification === "fixa" ? "Fixa" : "Variável"}` : " · Receita"}</p>
                   </div>
-                  <span className="col-start-3 hidden text-right text-sm tabular-nums text-muted-foreground sm:block">{brl(balance)}</span>
+                  <div className={`text-right text-sm font-semibold tabular-nums md:row-start-1 ${r.type === "entrada" ? "text-success md:col-start-2" : "text-danger md:col-start-3"}`}>
+                    <span className="mb-0.5 block text-[10px] font-normal md:hidden">{r.type === "entrada" ? "Receita" : "Despesa"}</span>
+                    {r.type === "entrada" ? "+" : "−"} {brl(r.amount)}
+                  </div>
+                  <div className="col-span-2 flex items-center justify-end gap-1 md:col-span-1 md:col-start-4 md:row-start-1">
+                    <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 px-2 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
+                      {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Editar lançamento" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-danger" title="Excluir lançamento" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
                 </li>)}
               </ul>
             </section>;
           })}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">Do mais recente ao mais antigo. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
+      <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
       </section>
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />
