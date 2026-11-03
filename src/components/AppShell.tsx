@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
+  Wallet,
   Tags,
   PlusCircle,
   CalendarClock,
