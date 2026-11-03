@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
-import { monthlyEntries } from "@/lib/monthly-report";
+import { monthlyEntries, realizedDailyBalances } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
@@ -126,6 +126,8 @@ function Lancamentos() {
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
+  const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
+  const days = Array.from(new Set(rows.map((row) => row.day)));
   const togglePaid = async (r: Row) => {
     setToggling(`${r.table}-${r.id}`);
     try {
@@ -190,28 +192,28 @@ function Lancamentos() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="flex items-center justify-between rounded-2xl border bg-card p-4 shadow-sm">
-        <div>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-3">
+        <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Lançamentos</p>
-          <h1 className="text-xl font-bold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
+          <h1 className="break-words text-lg font-semibold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="outline" onClick={() => shift(-1)} aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="min-w-[72px] rounded-md bg-muted px-3 py-1.5 text-center text-sm font-semibold">{MONTHS[month]}/{String(year).slice(2)}</span>
+          <span className="min-w-14 rounded-md bg-muted px-1.5 py-1.5 text-center text-xs font-semibold sm:px-3 sm:text-sm">{MONTHS[month]}/{String(year).slice(2)}</span>
           <Button size="sm" variant="outline" onClick={() => shift(1)} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </header>
 
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-3 gap-2 sm:gap-3">
         {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
-          <div key={l} className="rounded-2xl border bg-card p-4 shadow-sm">
+          <div key={l} className="min-w-0 rounded-lg border bg-card p-2.5 sm:p-4">
             <p className="text-xs text-muted-foreground">{l}</p>
-            <p className={`mt-1 text-base font-bold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
+            <p className={`mt-1 break-words text-sm font-semibold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
           </div>
         ))}
       </section>
 
-      <section className="rounded-2xl border bg-card p-5 shadow-sm">
+      <section className="border-b border-border pb-5">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
           <div className="max-w-[180px]">
@@ -262,8 +264,8 @@ function Lancamentos() {
         </div>
       </section>
 
-      <section className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <section className="space-y-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Lançamentos do mês</h2>
           <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
         </div>
@@ -285,35 +287,37 @@ function Lancamentos() {
         <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</p>
       )}
       {rows.length > 0 && (
-        <div className="overflow-hidden rounded-xl border">
-          <ul className="divide-y divide-border">
-            {rows.map((r) => (
-              <li key={`${r.table}-${r.id}`} className={`flex flex-wrap items-center gap-3 px-4 py-3 ${r.paid ? "" : "opacity-80"}`}>
-                    <OwnerIcon owner={r.owner} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{r.description}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"><span>{r.when}</span><span className="rounded-md bg-muted px-1.5 py-0.5 font-medium capitalize text-foreground">{r.category}</span>
-                      {r.classification && (
-                        <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium ${r.classification === "fixa" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                          {r.classification === "fixa" ? "Fixa" : "Variável"}
-                        </span>
-                      )}</div>
+        <div className="divide-y divide-border border-y border-border">
+          {days.map((day) => {
+            const balance = dailyBalances.find((item) => item.day === day)?.balance ?? 0;
+            return <section key={day} aria-label={`Lançamentos do dia ${day}`} className="py-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pb-3">
+                <h3 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h3>
+                <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>
+              </div>
+              <div className="mb-1 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 text-xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
+                <span className="text-success">Receitas</span><span className="text-danger">Despesas</span><span className="hidden text-right text-muted-foreground sm:block">Saldo realizado</span>
+              </div>
+              <ul className="divide-y divide-border">
+                {rows.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem]">
+                  <div className={`min-w-0 ${r.type === "entrada" ? "col-start-1" : "col-start-2"}`}>
+                    <div className="flex min-w-0 items-start gap-1.5"><OwnerIcon owner={r.owner} /><span className="min-w-0 break-words text-sm font-medium">{r.description}</span></div>
+                    <span className="mt-1 inline-block max-w-full break-words rounded bg-muted px-1.5 py-0.5 text-[11px] capitalize">{r.category}</span>
+                    {r.classification && <span className="mt-1 block text-[11px] text-muted-foreground">{r.classification === "fixa" ? "Fixa" : "Variável"}</span>}
+                    <div className={`mt-1 break-words text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>{brl(r.amount)}</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                      <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-9 px-2 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
+                        {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" title="Editar lançamento" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-danger" title="Excluir lançamento" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                    <span className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${r.type === "entrada" ? "text-success" : "text-danger"}`}>
-                      {r.type === "entrada" ? "+" : "−"}{brl(r.amount)}
-                    </span>
-                    <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 shrink-0 rounded-full px-3 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
-                      {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-danger" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-              </li>
-            ))}
-          </ul>
+                  </div>
+                  <span className="col-start-3 hidden text-right text-sm tabular-nums text-muted-foreground sm:block">{brl(balance)}</span>
+                </li>)}
+              </ul>
+            </section>;
+          })}
         </div>
       )}
       <p className="text-xs text-muted-foreground">Em ordem de data. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
