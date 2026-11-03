@@ -17,3 +17,5 @@
 - Monthly reports and Horizon use shared client-safe occurrence helpers; linked actual movements replace planned occurrences instead of being counted twice.
 - The inline entry form derives recurrence and installment RPC arguments through the tested quick-entry helper; photo extraction fills editable fields without changing the user's scheduling choice.
 - Removed financial views retain a redirect to entry management so existing URLs remain usable without exposing removed navigation.
+- Entry management groups occurrences newest-first by scheduled date and recorded time into income and expense columns; daily and opening balances use shared actual-movement helpers independently of list filters, without inserting carryover transactions.
+- Mobile navigation reserves safe-area-aware content space and uses weighted columns so all destination labels remain visible on narrow iPhone screens.

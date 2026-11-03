@@ -44,6 +44,42 @@ export function categoryTotals(entries: ReportEntry[], type: ReportEntry["type"]
   return [...groups.values()].sort((a, b) => b.amount - a.amount).map((group) => ({ ...group, percent: total ? group.amount / total * 100 : 0 }));
 }
 
+/** Daily account balances use actual movements only, never planned entries or future dates. */
+export function realizedOpeningBalance(transactions: Transaction[], month: Date, today = new Date()) {
+  const cutoff = Math.min(new Date(month.getFullYear(), month.getMonth(), 1).getTime(),
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime());
+  return transactions.filter((item) => (item.kind === "receita" || item.kind === "despesa") && new Date(item.occurred_at).getTime() < cutoff)
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+}
+
+/** Scheduling owns the date; the saved timestamp preserves hour, minute and second. */
+export function entryChronology(month: Date, day: number, recordedAt?: string | null) {
+  const time = recordedAt ? new Date(recordedAt) : null;
+  const valid = time && Number.isFinite(time.getTime()) ? time : null;
+  return new Date(month.getFullYear(), month.getMonth(), day, valid?.getHours() ?? 0,
+    valid?.getMinutes() ?? 0, valid?.getSeconds() ?? 0, valid?.getMilliseconds() ?? 0).getTime();
+}
+
+export function realizedDailyBalances(transactions: Transaction[], month: Date, today = new Date()) {
+  const start = new Date(month.getFullYear(), month.getMonth(), 1).getTime();
+  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
+  const movements = transactions.filter((item) =>
+    (item.kind === "receita" || item.kind === "despesa") && new Date(item.occurred_at).getTime() < cutoff,
+  );
+  let balance = movements.filter((item) => new Date(item.occurred_at).getTime() < start)
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+  return Array.from({ length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, index) => {
+    const day = index + 1;
+    const dayStart = new Date(month.getFullYear(), month.getMonth(), day).getTime();
+    const dayEnd = new Date(month.getFullYear(), month.getMonth(), day + 1).getTime();
+    balance += movements.filter((item) => {
+      const time = new Date(item.occurred_at).getTime();
+      return time >= dayStart && time < dayEnd;
+    }).reduce((sum, item) => sum + Number(item.amount), 0);
+    return { day, balance };
+  });
+}
+
 export function horizonMonth(income: Income[], expenses: Expense[], transactions: (Transaction & { id?: string; description?: string; owner?: string })[], month: Date) {
   const start = new Date(month.getFullYear(), month.getMonth(), 1).getTime();
   const financial = transactions.filter((item) => item.kind === "receita" || item.kind === "despesa");

@@ -20,7 +20,7 @@ import {
   realizedOnDate,
 } from "@/lib/finance";
 import { brl, greet, shortMonth } from "@/lib/format";
-import { fixedMonthlyExpenses } from "@/lib/monthly-report";
+import { fixedMonthlyExpenses, realizedOpeningBalance } from "@/lib/monthly-report";
 import { KpiCard } from "@/components/KpiCard";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +52,7 @@ function Dashboard() {
   const { data: transactions = [] } = useTransactions();
 
   const accountBalance = realizedBalance(transactions);
+  const openingBalance = realizedOpeningBalance(transactions, new Date());
   const [reserveOpen, setReserveOpen] = useState(false);
   const reservedBalance = reserves.reduce((sum, reserve) => sum + Number(reserve.current_amount), 0);
   const committedBalance = fixedMonthlyExpenses(expenses, new Date()).reduce((sum, expense) => sum + expense.amount, 0);
@@ -118,7 +119,7 @@ function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <KpiCard label="Saldo da conta" value={brl(accountBalance)} hint="Somente realizado" icon={<Wallet className="h-4 w-4" />} />
+        <KpiCard label="Saldo da conta" value={brl(accountBalance)} hint={<>Somente realizado<span className="mt-1 block">Saldo anterior ao mês: {brl(openingBalance)}</span></>} icon={<Wallet className="h-4 w-4" />} />
         <KpiCard label="Reservado" value={brl(reservedBalance)} hint={<Button variant="link" size="sm" className="h-auto p-0" onClick={() => setReserveOpen(true)}>Ajustar reserva</Button>} icon={<ShieldCheck className="h-4 w-4" />} />
         <KpiCard label="Comprometido" value={brl(committedBalance)} hint="Despesas fixas do mês" icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
       </div>
