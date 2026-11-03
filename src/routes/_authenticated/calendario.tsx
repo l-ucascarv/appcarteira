@@ -67,17 +67,17 @@ function Calendario() {
         <p className="mt-1 text-sm text-muted-foreground capitalize">{monthName}</p>
       </div>
 
-      <Card className="rounded-2xl p-4 shadow-none md:p-6">
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-muted-foreground">
+      <Card className="min-w-0 rounded-xl p-2.5 shadow-none sm:p-4 md:p-6">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground sm:gap-2">
           {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
-        <div className="mt-2 grid grid-cols-7 gap-2">
+        <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
           {cells.map((day, i) => (
             <div
               key={i}
-              className={`min-h-20 rounded-xl border p-2 text-left text-xs ${
+              className={`min-h-16 min-w-0 rounded-md border p-1 text-left text-xs sm:min-h-20 sm:p-2 ${
                 day === null ? "border-transparent" : "border-border"
               } ${day === today ? "ring-2 ring-foreground/40" : ""}`}
             >
@@ -112,7 +112,7 @@ function Calendario() {
           {[...expenses].sort((a, b) => a.due_day - b.due_day).map((e) => {
             const overdue = e.status !== "pago" && e.due_day < today;
             return (
-              <li key={e.id} className="flex items-center gap-3 py-3">
+              <li key={e.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 py-3 sm:flex sm:gap-3">
                 <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-muted text-xs font-semibold">
                   {e.due_day}
                 </div>
@@ -123,12 +123,12 @@ function Calendario() {
                     {e.installment_current && e.installment_total ? ` • ${e.installment_current}/${e.installment_total}` : ""}
                   </div>
                 </div>
-                <div className="text-sm font-semibold tabular-nums">{brl(Number(e.amount))}</div>
+                <div className="shrink-0 text-right text-sm font-semibold tabular-nums">{brl(Number(e.amount))}</div>
                 {e.status !== "pago" && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-full"
+                    className="col-start-2 justify-self-start rounded-md"
                     onClick={() => setPayOpen({ id: e.id, amount: Number(e.amount), name: e.name })}
                   >
                     Pagar
