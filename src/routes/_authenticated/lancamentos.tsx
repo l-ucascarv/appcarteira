@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
-import { monthlyEntries, realizedDailyBalances } from "@/lib/monthly-report";
+import { monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
@@ -41,6 +41,7 @@ type Row = {
   status: string;
   when: string;
   day: number;
+  timestamp: number;
   paid: boolean;
   recurring: boolean;
   owner: string;
@@ -102,16 +103,19 @@ function Lancamentos() {
       const isIncome = entry.type === "receita";
       const src = isIncome ? income.find((i) => i.id === entry.id) : expenses.find((e) => e.id === entry.id);
       const recurring = isIncome ? Boolean((src as { recurring?: boolean })?.recurring) : repeatsMonthly(src as never);
-      const paid = monthTx.some((t) => t.reference_id === entry.id && t.kind === entry.type);
+      const movement = monthTx.find((t) => t.reference_id === entry.id && t.kind === entry.type);
+      const paid = Boolean(movement);
+      const recordedAt = movement?.occurred_at ?? (src as { created_at?: string } | undefined)?.created_at;
       return {
         id: entry.id, table: isIncome ? "income" as const : "expenses" as const, type: isIncome ? "entrada" as const : "saida" as const,
         description: entry.description, category: entry.category, amount: entry.amount,
         status: paid ? (isIncome ? "recebido" : "pago") : (isIncome ? "previsto" : "pendente"),
         when: new Date(year, month, entry.day).toLocaleDateString("pt-BR"), day: entry.day, paid, recurring,
+        timestamp: entryChronology(cursor, entry.day, recordedAt),
         owner: entry.owner, classification: isIncome ? undefined : (entry.fixed ? "fixa" as const : "variavel" as const),
         source: src as unknown as EditableIncome | EditableExpense,
       };
-    }).sort((x, y) => x.day - y.day || x.description.localeCompare(y.description));
+    }).sort((x, y) => y.timestamp - x.timestamp || y.id.localeCompare(x.id));
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
@@ -128,6 +132,7 @@ function Lancamentos() {
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
   const days = Array.from(new Set(rows.map((row) => row.day)));
+  const openingBalance = realizedOpeningBalance(transactions, cursor);
   const togglePaid = async (r: Row) => {
     setToggling(`${r.table}-${r.id}`);
     try {
@@ -203,6 +208,11 @@ function Lancamentos() {
           <Button size="sm" variant="outline" onClick={() => shift(1)} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </header>
+
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
+        <div className="min-w-0"><p className="text-sm font-medium">Saldo anterior ao mês</p><p className="text-xs text-muted-foreground">Saldo realizado acumulado até o mês anterior</p></div>
+        <span className={`text-sm font-semibold tabular-nums ${openingBalance >= 0 ? "text-success" : "text-danger"}`}>{brl(openingBalance)}</span>
+      </div>
 
       <section className="grid grid-cols-3 gap-2 sm:gap-3">
         {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
@@ -320,7 +330,7 @@ function Lancamentos() {
           })}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">Em ordem de data. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
+      <p className="text-xs text-muted-foreground">Do mais recente ao mais antigo. Só entram no saldo da conta quando marcados como pago ou recebido.</p>
       </section>
 
       <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />

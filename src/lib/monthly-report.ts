@@ -45,6 +45,21 @@ export function categoryTotals(entries: ReportEntry[], type: ReportEntry["type"]
 }
 
 /** Daily account balances use actual movements only, never planned entries or future dates. */
+export function realizedOpeningBalance(transactions: Transaction[], month: Date, today = new Date()) {
+  const cutoff = Math.min(new Date(month.getFullYear(), month.getMonth(), 1).getTime(),
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime());
+  return transactions.filter((item) => (item.kind === "receita" || item.kind === "despesa") && new Date(item.occurred_at).getTime() < cutoff)
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+}
+
+/** Scheduling owns the date; the saved timestamp preserves hour, minute and second. */
+export function entryChronology(month: Date, day: number, recordedAt?: string | null) {
+  const time = recordedAt ? new Date(recordedAt) : null;
+  const valid = time && Number.isFinite(time.getTime()) ? time : null;
+  return new Date(month.getFullYear(), month.getMonth(), day, valid?.getHours() ?? 0,
+    valid?.getMinutes() ?? 0, valid?.getSeconds() ?? 0, valid?.getMilliseconds() ?? 0).getTime();
+}
+
 export function realizedDailyBalances(transactions: Transaction[], month: Date, today = new Date()) {
   const start = new Date(month.getFullYear(), month.getMonth(), 1).getTime();
   const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
