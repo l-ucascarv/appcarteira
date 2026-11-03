@@ -60,6 +60,11 @@ export function entryChronology(month: Date, day: number, recordedAt?: string | 
     valid?.getMinutes() ?? 0, valid?.getSeconds() ?? 0, valid?.getMilliseconds() ?? 0).getTime();
 }
 
+export function compareEntryChronology(a: { timestamp: number; id: string }, b: { timestamp: number; id: string }, order: "asc" | "desc" = "asc") {
+  const comparison = a.timestamp - b.timestamp || a.id.localeCompare(b.id);
+  return order === "asc" ? comparison : -comparison;
+}
+
 export function realizedDailyBalances(transactions: Transaction[], month: Date, today = new Date()) {
   const start = new Date(month.getFullYear(), month.getMonth(), 1).getTime();
   const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
