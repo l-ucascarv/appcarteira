@@ -48,11 +48,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-background text-foreground">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card/60 px-3 py-6 backdrop-blur md:flex md:flex-col">
-        <div className="mb-7 flex items-center gap-2.5 px-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-            <PiggyBank className="h-4 w-4" />
-          </span>
-          <span className="truncate text-[15px] font-semibold lowercase tracking-tight">meu caixa</span>
+        <div className="mb-7 px-1">
+          <img src={logoLight} alt="Meu Caixa" className="block h-10 w-auto dark:hidden" width={2048} height={1024} />
+          <img src={logoDark} alt="Meu Caixa" className="hidden h-10 w-auto dark:block" width={2048} height={1024} />
         </div>
 
         <nav className="flex flex-col gap-0.5">
@@ -99,11 +97,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <header className="mobile-top-bar sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-xl md:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <PiggyBank className="h-3.5 w-3.5" />
-          </span>
-          <span className="truncate text-[15px] font-semibold lowercase tracking-tight">meu caixa</span>
+        <div className="flex min-w-0 items-center">
+          <img src={logoLight} alt="Meu Caixa" className="block h-8 w-auto dark:hidden" width={2048} height={1024} />
+          <img src={logoDark} alt="Meu Caixa" className="hidden h-8 w-auto dark:block" width={2048} height={1024} />
         </div>
         <div className="flex shrink-0 gap-1">
           <Button
