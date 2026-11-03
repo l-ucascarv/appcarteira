@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Meu Caixa — Consultor financeiro pessoal" },
       { name: "description", content: "Organize suas finanças por prioridade e saiba exatamente quanto está livre para gastar." },
       { property: "og:title", content: "Meu Caixa" },

@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }`;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card/60 px-3 py-6 backdrop-blur md:flex md:flex-col">
         <div className="mb-7 flex items-center gap-2.5 px-3">
@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/75 px-4 py-3 backdrop-blur-xl md:hidden">
+      <header className="mobile-top-bar sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-xl md:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
             <PiggyBank className="h-3.5 w-3.5" />
@@ -109,23 +109,24 @@ export function AppShell({ children }: { children: ReactNode }) {
             variant="ghost"
             size="icon"
             className="rounded-full"
+            aria-label="Alternar tema"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={signOut}>
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Sair" onClick={signOut}>
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <main className="pb-28 md:pb-12 md:pl-60">
-        <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-12">{children}</div>
+      <main className="app-main min-w-0 md:pb-12 md:pl-60">
+        <div className="mx-auto min-w-0 max-w-5xl px-3 py-4 sm:px-5 sm:py-6 md:px-8 md:py-8">{children}</div>
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-background/85 px-2 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5">
+      <nav aria-label="Navegação principal" className="mobile-bottom-bar fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur-xl md:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-[1fr_.8fr_1.5fr_1.1fr_1fr] items-stretch">
           {[NAV[0], NAV[1], NAV[2], ACTIONS[0], ACTIONS[1]].map((n) => {
             const active = loc.pathname === n.to;
             const Icon = n.icon;
@@ -133,12 +134,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={n.label}
                 to={n.to}
-                className={`flex flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] lowercase tracking-tight ${
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] lowercase ${
                   active ? "font-semibold text-primary" : "text-muted-foreground"
                 }`}
               >
-                <Icon className="h-[18px] w-[18px]" />
-                <span className={`max-w-full whitespace-nowrap text-center leading-tight ${n.label === "comprometido" ? "text-[8px]" : ""}`}>{n.label}</span>
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="max-w-full whitespace-nowrap text-center leading-tight">{n.label}</span>
               </Link>
             );
           })}

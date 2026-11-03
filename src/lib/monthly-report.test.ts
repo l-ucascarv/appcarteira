@@ -1,10 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { fixedMonthlyExpenses, horizonMonth, categoryTotals, monthlyEntries } from "./monthly-report";
+import { fixedMonthlyExpenses, horizonMonth, categoryTotals, monthlyEntries, realizedDailyBalances } from "./monthly-report";
 import type { Expense, Income } from "./finance";
 const month = new Date(2026, 9, 1);
 const expense = (id: string, amount: number, category: string, due_date: string, status: Expense["status"] = "pendente"): Expense => ({ id, name: id, amount, category, due_date, due_day: Number(due_date.slice(8)), status, installment_current: null, installment_total: null, note: null });
 const income: Income[] = [{ id: "salary", name: "Salário", amount: 1000, kind: "salario", category_label: "Trabalho", reference_month: "2026-10-20", recurring: false, status: "previsto", received_at: null }];
 describe("painéis mensais", () => {
+  it("saldo das colunas soma realizado anterior e do dia, excluindo futuros e reservas", () => {
+    const result = realizedDailyBalances([
+      { kind: "receita", amount: 300, occurred_at: "2026-09-30T12:00:00" },
+      { kind: "receita", amount: 1000, occurred_at: "2026-10-02T12:00:00" },
+      { kind: "despesa", amount: -200, occurred_at: "2026-10-03T12:00:00" },
+      { kind: "reserva", amount: -50, occurred_at: "2026-10-03T12:00:00" },
+      { kind: "despesa", amount: -900, occurred_at: "2026-10-25T12:00:00" },
+    ], month, new Date(2026, 9, 20));
+    expect(result[0].balance).toBe(300);
+    expect(result[1].balance).toBe(1300);
+    expect(result[2].balance).toBe(1100);
+    expect(result[24].balance).toBe(1100);
+  });
+  it("desmarcar um pagamento remove seu impacto do saldo diário", () => {
+    const paid = [{ kind: "despesa", amount: -200, occurred_at: "2026-10-03T12:00:00" }];
+    expect(realizedDailyBalances(paid, month, new Date(2026, 9, 20))[2].balance).toBe(-200);
+    expect(realizedDailyBalances([], month, new Date(2026, 9, 20))[2].balance).toBe(0);
+  });
   it("receita fixa aparece mensalmente a partir da data inicial, mesmo pendente", () => {
     const salary = { ...income[0], recurring: true };
     expect(monthlyEntries([salary], [], new Date(2026, 8, 1))).toEqual([]);
