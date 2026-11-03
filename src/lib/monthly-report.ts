@@ -68,19 +68,23 @@ export function compareEntryChronology(a: { timestamp: number; id: string }, b: 
 export function realizedDailyBalances(transactions: Transaction[], month: Date, today = new Date()) {
   const start = new Date(month.getFullYear(), month.getMonth(), 1).getTime();
   const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
-  const movements = transactions.filter((item) =>
-    (item.kind === "receita" || item.kind === "despesa") && new Date(item.occurred_at).getTime() < cutoff,
-  );
-  let balance = movements.filter((item) => new Date(item.occurred_at).getTime() < start)
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+  const end = new Date(month.getFullYear(), month.getMonth() + 1, 1).getTime();
+  const totals = new Map<number, number>();
+  let balance = 0;
+  for (const item of transactions) {
+    if (item.kind !== "receita" && item.kind !== "despesa") continue;
+    const date = new Date(item.occurred_at);
+    const time = date.getTime();
+    if (!Number.isFinite(time) || time >= cutoff) continue;
+    if (time < start) balance += Number(item.amount);
+    else if (time < end) {
+      const day = date.getDate();
+      totals.set(day, (totals.get(day) ?? 0) + Number(item.amount));
+    }
+  }
   return Array.from({ length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, index) => {
     const day = index + 1;
-    const dayStart = new Date(month.getFullYear(), month.getMonth(), day).getTime();
-    const dayEnd = new Date(month.getFullYear(), month.getMonth(), day + 1).getTime();
-    balance += movements.filter((item) => {
-      const time = new Date(item.occurred_at).getTime();
-      return time >= dayStart && time < dayEnd;
-    }).reduce((sum, item) => sum + Number(item.amount), 0);
+    balance += totals.get(day) ?? 0;
     return { day, balance };
   });
 }
