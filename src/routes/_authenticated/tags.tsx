@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIncome, useExpenses } from "@/lib/queries";
+import { useFamilyOverview } from "@/lib/family";
 import { monthlyEntries, categoryTotals } from "@/lib/monthly-report";
 import { ReportMonthPicker } from "@/components/ReportMonthPicker";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,14 @@ export const Route = createFileRoute("/_authenticated/tags")({
 
 function Tags() {
   const { data: income = [] } = useIncome(); const { data: expenses = [] } = useExpenses();
+  const { data: family } = useFamilyOverview();
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  const [owner, setOwner] = useState("todos");
-  const entries = monthlyEntries(income, expenses, month).filter((entry) => owner === "todos" || entry.owner === owner);
+  const [member, setMember] = useState("todos");
+  const entries = monthlyEntries(income, expenses, month).filter((entry) => member === "todos" || entry.user_id === member);
   return <div className="space-y-6">
     <h1 className="text-2xl font-semibold">Tags</h1>
     <ReportMonthPicker month={month} onChange={setMonth} />
-    <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">{["todos", "ele", "ela"].map((value) => <Button key={value} variant={owner === value ? "secondary" : "ghost"} onClick={() => setOwner(value)}>{value !== "todos" && <OwnerIcon owner={value} />}{value === "todos" ? "Casal" : value === "ele" ? "Ele" : "Ela"}</Button>)}</div>
+    <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">{[{ user_id: "todos", name: "Família" }, ...(family?.members ?? [])].map((m) => <Button key={m.user_id} variant={member === m.user_id ? "secondary" : "ghost"} onClick={() => setMember(m.user_id)}>{m.name}</Button>)}</div>
     <div className="grid gap-8 lg:grid-cols-2">
       {(["despesa", "receita"] as const).map((type) => {
         const groups = categoryTotals(entries, type); const total = groups.reduce((sum, group) => sum + group.amount, 0);
