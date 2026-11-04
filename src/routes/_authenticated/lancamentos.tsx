@@ -96,6 +96,7 @@ function Lancamentos() {
   const [qInstallments, setQInstallments] = useState("");
   const [qOwner, setQOwner] = useState<Owner>("ele");
   const [qDate, setQDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [qPending, setQPending] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { data: transactions = [] } = useTransactions();
@@ -193,7 +194,7 @@ function Lancamentos() {
     setSaving(true);
     try {
       const isIn = qType === "entrada";
-      const schedule = quickEntrySchedule(qType, qClass, qInstallments);
+      const schedule = quickEntrySchedule(qType, qClass, qInstallments, !qPending && qDate <= today);
       const { error } = await supabase.rpc("save_financial_entry", {
         p_type: isIn ? "receita" : "despesa", p_name: qName, p_amount: Number(qAmount), p_date: qDate,
         ...schedule, p_label: qCat || (isIn ? "Receita" : qClass), p_owner: qOwner,
@@ -277,11 +278,15 @@ function Lancamentos() {
               <Button key={o} type="button" variant="ghost" aria-pressed={qOwner === o} onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</Button>
             ))}
           </div>
+          <label className="flex items-center gap-2 text-sm sm:col-span-6">
+            <input type="checkbox" checked={qPending} onChange={(e) => setQPending(e.target.checked)} />
+            Lançar como pendente (ainda não {qType === "entrada" ? "recebido" : "pago"})
+          </label>
           <Button type="submit" disabled={saving || !qClass} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
         </form>
         <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções</Button>
-          <span>· {qDate > today ? "Futuro" : "Pendente"} até marcar como pago</span>
+          <span>· Por padrão o lançamento já entra como {qType === "entrada" ? "recebido" : "pago"}; marque pendente se ainda não foi {qType === "entrada" ? "recebido" : "pago"}</span>
         </div>
       </section>
 
