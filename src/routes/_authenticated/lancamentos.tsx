@@ -96,6 +96,7 @@ function Lancamentos() {
   const [qInstallments, setQInstallments] = useState("");
   const [qOwner, setQOwner] = useState<Owner>("ele");
   const [qDate, setQDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [qPending, setQPending] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { data: transactions = [] } = useTransactions();
@@ -142,7 +143,6 @@ function Lancamentos() {
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
-  const days = Array.from(new Set(rows.map((row) => row.day)));
   const openingBalance = realizedOpeningBalance(transactions, cursor);
   const togglePaid = async (r: Row) => {
     setToggling(`${r.table}-${r.id}`);
@@ -193,7 +193,7 @@ function Lancamentos() {
     setSaving(true);
     try {
       const isIn = qType === "entrada";
-      const schedule = quickEntrySchedule(qType, qClass, qInstallments);
+      const schedule = quickEntrySchedule(qType, qClass, qInstallments, !qPending && qDate <= today);
       const { error } = await supabase.rpc("save_financial_entry", {
         p_type: isIn ? "receita" : "despesa", p_name: qName, p_amount: Number(qAmount), p_date: qDate,
         ...schedule, p_label: qCat || (isIn ? "Receita" : qClass), p_owner: qOwner,
@@ -204,6 +204,54 @@ function Lancamentos() {
       qc.invalidateQueries();
     } catch (err) { toast.error(err instanceof Error ? err.message : "Erro ao lançar"); }
     finally { setSaving(false); }
+  };
+
+  const renderGroup = (title: string, subtitle: string, group: Row[], showBalance: boolean) => {
+    const groupDays = Array.from(new Set(group.map((row) => row.day)));
+    return (
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        {groupDays.length === 0 && <p className="py-3 text-sm text-muted-foreground">Nenhum lançamento neste grupo.</p>}
+        {groupDays.length > 0 && (
+          <div className="divide-y divide-border border-y border-border">
+            {groupDays.map((day) => {
+              const balance = dailyBalances.find((item) => item.day === day)?.balance ?? 0;
+              return <section key={day} aria-label={`Lançamentos do dia ${day}`} className="py-4">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pb-3">
+                  <h4 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h4>
+                  {showBalance && <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>}
+                </div>
+                <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] gap-4 border-b border-border pb-2 text-xs text-muted-foreground md:grid">
+                  <span>Lançamento</span><span className="text-right">Receitas</span><span className="text-right">Despesas</span><span className="text-right">Situação / ações</span>
+                </div>
+                <ul className="divide-y divide-border">
+                  {group.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] md:gap-4">
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-start gap-1.5"><OwnerIcon owner={r.owner} /><span className="min-w-0 break-words text-sm font-medium">{r.description}</span></div>
+                      <p className="mt-1 break-words text-xs text-muted-foreground">{r.category}{r.classification ? ` · ${r.classification === "fixa" ? "Fixa" : "Variável"}` : " · Receita"}</p>
+                    </div>
+                    <div className={`text-right text-sm font-semibold tabular-nums md:row-start-1 ${r.type === "entrada" ? "text-success md:col-start-2" : "text-danger md:col-start-3"}`}>
+                      <span className="mb-0.5 block text-[10px] font-normal md:hidden">{r.type === "entrada" ? "Receita" : "Despesa"}</span>
+                      {r.type === "entrada" ? "+" : "−"} {brl(r.amount)}
+                    </div>
+                    <div className="col-span-2 flex items-center justify-end gap-1 md:col-span-1 md:col-start-4 md:row-start-1">
+                      <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 px-2 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
+                        {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Editar lançamento" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-danger" title="Excluir lançamento" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </li>)}
+                </ul>
+              </section>;
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -277,11 +325,15 @@ function Lancamentos() {
               <Button key={o} type="button" variant="ghost" aria-pressed={qOwner === o} onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</Button>
             ))}
           </div>
+          <label className="flex items-center gap-2 text-sm sm:col-span-6">
+            <input type="checkbox" checked={qPending} onChange={(e) => setQPending(e.target.checked)} />
+            Lançar como pendente (ainda não {qType === "entrada" ? "recebido" : "pago"})
+          </label>
           <Button type="submit" disabled={saving || !qClass} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
         </form>
         <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções</Button>
-          <span>· {qDate > today ? "Futuro" : "Pendente"} até marcar como pago</span>
+          <span>· Por padrão o lançamento já entra como {qType === "entrada" ? "recebido" : "pago"}; marque pendente se ainda não foi {qType === "entrada" ? "recebido" : "pago"}</span>
         </div>
       </section>
 
@@ -312,38 +364,9 @@ function Lancamentos() {
         <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</p>
       )}
       {rows.length > 0 && (
-        <div className="divide-y divide-border border-y border-border">
-          {days.map((day) => {
-            const balance = dailyBalances.find((item) => item.day === day)?.balance ?? 0;
-            return <section key={day} aria-label={`Lançamentos do dia ${day}`} className="py-4">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pb-3">
-                <h3 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h3>
-                <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>
-              </div>
-              <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] gap-4 border-b border-border pb-2 text-xs text-muted-foreground md:grid">
-                <span>Lançamento</span><span className="text-right">Receitas</span><span className="text-right">Despesas</span><span className="text-right">Situação / ações</span>
-              </div>
-              <ul className="divide-y divide-border">
-                {rows.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] md:gap-4">
-                  <div className="min-w-0">
-                    <div className="flex min-w-0 items-start gap-1.5"><OwnerIcon owner={r.owner} /><span className="min-w-0 break-words text-sm font-medium">{r.description}</span></div>
-                    <p className="mt-1 break-words text-xs text-muted-foreground">{r.category}{r.classification ? ` · ${r.classification === "fixa" ? "Fixa" : "Variável"}` : " · Receita"}</p>
-                  </div>
-                  <div className={`text-right text-sm font-semibold tabular-nums md:row-start-1 ${r.type === "entrada" ? "text-success md:col-start-2" : "text-danger md:col-start-3"}`}>
-                    <span className="mb-0.5 block text-[10px] font-normal md:hidden">{r.type === "entrada" ? "Receita" : "Despesa"}</span>
-                    {r.type === "entrada" ? "+" : "−"} {brl(r.amount)}
-                  </div>
-                  <div className="col-span-2 flex items-center justify-end gap-1 md:col-span-1 md:col-start-4 md:row-start-1">
-                    <Button variant={r.paid ? "secondary" : "outline"} size="sm" className="h-8 px-2 text-xs" disabled={toggling === `${r.table}-${r.id}`} onClick={() => togglePaid(r)} aria-label={`${r.paid ? "Desmarcar" : "Marcar"} ${r.description}`}>
-                      {r.paid ? <><Check className="mr-1 h-3.5 w-3.5" />{r.type === "entrada" ? "Recebido" : "Pago"}</> : r.type === "entrada" ? "Receber" : "Pagar"}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Editar lançamento" aria-label={`Editar ${r.description}`} onClick={() => r.table === "income" ? setEditIncome(r.source as EditableIncome) : setEditExpense(r.source as EditableExpense)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-danger" title="Excluir lançamento" aria-label={`Excluir ${r.description}`} onClick={() => { if (confirm(`Excluir "${r.description}"?`)) remove(r); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </li>)}
-              </ul>
-            </section>;
-          })}
+        <div className="space-y-8">
+          {renderGroup("Pagamentos realizados", "Já entraram no saldo da conta.", rows.filter((r) => r.paid), true)}
+          {renderGroup("Pendentes e futuros", "Constam no panorama, mas só alteram o caixa quando pagos ou recebidos.", rows.filter((r) => !r.paid), false)}
         </div>
       )}
       <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
