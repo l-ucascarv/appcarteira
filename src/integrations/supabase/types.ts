@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          family_id: string | null
           id: string
           name: string
           type: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           balance?: number
           created_at?: string
+          family_id?: string | null
           id?: string
           name: string
           type?: string
@@ -34,12 +36,21 @@ export type Database = {
         Update: {
           balance?: number
           created_at?: string
+          family_id?: string | null
           id?: string
           name?: string
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "accounts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_access_state: {
         Row: {
@@ -70,6 +81,7 @@ export type Database = {
           created_at: string
           due_date: string
           due_day: number
+          family_id: string | null
           id: string
           installment_current: number | null
           installment_total: number | null
@@ -86,6 +98,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           due_day: number
+          family_id?: string | null
           id?: string
           installment_current?: number | null
           installment_total?: number | null
@@ -102,6 +115,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           due_day?: number
+          family_id?: string | null
           id?: string
           installment_current?: number | null
           installment_total?: number | null
@@ -111,13 +125,107 @@ export type Database = {
           status?: string
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      families: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
         Relationships: []
+      }
+      family_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          family_id: string
+          id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          family_id: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          family_id?: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invites_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          family_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals: {
         Row: {
           created_at: string
           current_amount: number
           deadline: string | null
+          family_id: string | null
           id: string
           name: string
           target_amount: number
@@ -127,6 +235,7 @@ export type Database = {
           created_at?: string
           current_amount?: number
           deadline?: string | null
+          family_id?: string | null
           id?: string
           name: string
           target_amount: number
@@ -136,18 +245,28 @@ export type Database = {
           created_at?: string
           current_amount?: number
           deadline?: string | null
+          family_id?: string | null
           id?: string
           name?: string
           target_amount?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income: {
         Row: {
           amount: number
           category_label: string | null
           created_at: string
+          family_id: string | null
           id: string
           kind: string
           name: string
@@ -162,6 +281,7 @@ export type Database = {
           amount: number
           category_label?: string | null
           created_at?: string
+          family_id?: string | null
           id?: string
           kind: string
           name: string
@@ -176,6 +296,7 @@ export type Database = {
           amount?: number
           category_label?: string | null
           created_at?: string
+          family_id?: string | null
           id?: string
           kind?: string
           name?: string
@@ -186,7 +307,15 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "income_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       insights: {
         Row: {
@@ -271,6 +400,7 @@ export type Database = {
           color: string | null
           created_at: string
           current_amount: number
+          family_id: string | null
           goal_amount: number
           id: string
           name: string
@@ -281,6 +411,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           current_amount?: number
+          family_id?: string | null
           goal_amount: number
           id?: string
           name: string
@@ -291,13 +422,22 @@ export type Database = {
           color?: string | null
           created_at?: string
           current_amount?: number
+          family_id?: string | null
           goal_amount?: number
           id?: string
           name?: string
           priority?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reserves_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -305,6 +445,7 @@ export type Database = {
           balance_after: number | null
           created_at: string
           description: string
+          family_id: string | null
           id: string
           kind: string
           occurred_at: string
@@ -317,6 +458,7 @@ export type Database = {
           balance_after?: number | null
           created_at?: string
           description: string
+          family_id?: string | null
           id?: string
           kind: string
           occurred_at?: string
@@ -329,6 +471,7 @@ export type Database = {
           balance_after?: number | null
           created_at?: string
           description?: string
+          family_id?: string | null
           id?: string
           kind?: string
           occurred_at?: string
@@ -336,13 +479,29 @@ export type Database = {
           reference_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_family_invite: { Args: { p_token: string }; Returns: string }
+      create_family_invite: { Args: never; Returns: string }
+      family_overview: { Args: never; Returns: Json }
+      invite_info: { Args: { p_token: string }; Returns: Json }
+      is_family_member: {
+        Args: { p_family: string; p_user?: string }
+        Returns: boolean
+      }
       save_financial_entry: {
         Args: {
           p_amount: number
@@ -360,6 +519,7 @@ export type Database = {
         }
         Returns: string
       }
+      shares_family: { Args: { p_user: string }; Returns: boolean }
       update_financial_entry: {
         Args: {
           p_amount: number
