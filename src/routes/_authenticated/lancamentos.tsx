@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { EntryAiTools } from "@/components/EntryAiTools";
 import { quickEntrySchedule, type EntryClassification } from "@/lib/quick-entry";
+import { useFamilyOverview } from "@/lib/family";
 
 const AddIncomeDialog = lazy(() => import("@/components/AddIncomeDialog").then((module) => ({ default: module.AddIncomeDialog })));
 const AddExpenseDialog = lazy(() => import("@/components/AddExpenseDialog").then((module) => ({ default: module.AddExpenseDialog })));
@@ -48,6 +49,7 @@ type Row = {
   paid: boolean;
   recurring: boolean;
   owner: string;
+  user_id: string;
   classification?: "fixa" | "variavel";
   source: EditableIncome | EditableExpense;
 };
@@ -73,7 +75,7 @@ function Lancamentos() {
   const del = useDeleteEntry();
   const delAll = useDeleteAllEntries();
 
-  const [ownerFilter, setOwnerFilter] = useState<Owner | "todos">("todos");
+  const [memberFilter, setMemberFilter] = useState<string>("todos");
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -100,6 +102,7 @@ function Lancamentos() {
   const [saving, setSaving] = useState(false);
 
   const { data: transactions = [] } = useTransactions();
+  const { data: family } = useFamilyOverview();
   const qc = useQueryClient();
   const [toggling, setToggling] = useState<string | null>(null);
   const rows = useMemo<Row[]>(() => {
@@ -124,21 +127,21 @@ function Lancamentos() {
         status: paid ? (isIncome ? "recebido" : "pago") : (isIncome ? "previsto" : "pendente"),
         when: new Date(year, month, entry.day).toLocaleDateString("pt-BR"), day: entry.day, paid, recurring,
         timestamp: entryChronology(cursor, entry.day, recordedAt),
-        owner: entry.owner, classification: isIncome ? undefined : (entry.fixed ? "fixa" as const : "variavel" as const),
+        owner: entry.owner, user_id: entry.user_id, classification: isIncome ? undefined : (entry.fixed ? "fixa" as const : "variavel" as const),
         source: src as unknown as EditableIncome | EditableExpense,
       };
     }).sort((x, y) => compareEntryChronology(x, y, sortOrder));
     const term = q.trim().toLowerCase();
     return list.filter(
       (r) =>
-        (ownerFilter === "todos" || r.owner === ownerFilter) &&
+        (memberFilter === "todos" || r.user_id === memberFilter) &&
         (classFilter === "todas" || r.classification === classFilter) &&
         (!term ||
           r.description.toLowerCase().includes(term) ||
           r.category.toLowerCase().includes(term) ||
           (r.classification === "fixa" ? "fixa" : r.classification ? "variável variavel" : "").includes(term)),
     );
-  }, [income, expenses, transactions, ownerFilter, classFilter, q, sortOrder, year, month, cursor]);
+  }, [income, expenses, transactions, memberFilter, classFilter, q, sortOrder, year, month, cursor]);
 
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
@@ -347,9 +350,9 @@ function Lancamentos() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="pl-9" />
           </div>
-          <select aria-label="Quem lançou" value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value as Owner | "todos")} className="h-10 rounded-md border bg-background px-3 text-sm">
-            <option value="todos">Casal</option>
-            {OWNERS.map((o) => <option key={o} value={o}>{ownerLabel(o)}</option>)}
+          <select aria-label="Membro da família" value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="h-10 rounded-md border bg-background px-3 text-sm">
+            <option value="todos">Família</option>
+            {(family?.members ?? []).map((m) => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
           </select>
           <select aria-label="Classificação" value={classFilter} onChange={(e) => setClassFilter(e.target.value as typeof classFilter)} className="h-10 rounded-md border bg-background px-3 text-sm">
             <option value="todas">Todas</option><option value="fixa">Fixas</option><option value="variavel">Variáveis</option>
