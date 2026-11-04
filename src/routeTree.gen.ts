@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConviteRouteImport } from './routes/convite'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedComprometidoRouteImport } from './routes/_authenticated/comprometido'
 import { Route as AuthenticatedFluxoRouteImport } from './routes/_authenticated/fluxo'
 import { Route as AuthenticatedLancamentosRouteImport } from './routes/_authenticated/lancamentos'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
 import { Route as AuthenticatedReservasRouteImport } from './routes/_authenticated/reservas'
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
@@ -27,6 +29,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConviteRoute = ConviteRouteImport.update({
+  id: '/convite',
+  path: '/convite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -56,6 +63,11 @@ const AuthenticatedLancamentosRoute =
     path: '/lancamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
   id: '/previsao',
   path: '/previsao',
@@ -75,20 +87,24 @@ const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/convite': typeof ConviteRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/comprometido': typeof AuthenticatedComprometidoRoute
   '/fluxo': typeof AuthenticatedFluxoRoute
   '/lancamentos': typeof AuthenticatedLancamentosRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/reservas': typeof AuthenticatedReservasRoute
   '/tags': typeof AuthenticatedTagsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/convite': typeof ConviteRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/comprometido': typeof AuthenticatedComprometidoRoute
   '/fluxo': typeof AuthenticatedFluxoRoute
   '/lancamentos': typeof AuthenticatedLancamentosRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/reservas': typeof AuthenticatedReservasRoute
   '/tags': typeof AuthenticatedTagsRoute
@@ -98,10 +114,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/convite': typeof ConviteRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/comprometido': typeof AuthenticatedComprometidoRoute
   '/_authenticated/fluxo': typeof AuthenticatedFluxoRoute
   '/_authenticated/lancamentos': typeof AuthenticatedLancamentosRoute
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/reservas': typeof AuthenticatedReservasRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
@@ -112,20 +130,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/convite'
     | '/calendario'
     | '/comprometido'
     | '/fluxo'
     | '/lancamentos'
+    | '/perfil'
     | '/previsao'
     | '/reservas'
     | '/tags'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/convite'
     | '/calendario'
     | '/comprometido'
     | '/fluxo'
     | '/lancamentos'
+    | '/perfil'
     | '/previsao'
     | '/reservas'
     | '/tags'
@@ -134,10 +156,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/convite'
     | '/_authenticated/calendario'
     | '/_authenticated/comprometido'
     | '/_authenticated/fluxo'
     | '/_authenticated/lancamentos'
+    | '/_authenticated/perfil'
     | '/_authenticated/previsao'
     | '/_authenticated/reservas'
     | '/_authenticated/tags'
@@ -147,6 +171,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ConviteRoute: typeof ConviteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -163,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/convite': {
+      id: '/convite'
+      path: '/convite'
+      fullPath: '/convite'
+      preLoaderRoute: typeof ConviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -200,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLancamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/previsao': {
       id: '/_authenticated/previsao'
       path: '/previsao'
@@ -229,6 +268,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedComprometidoRoute: typeof AuthenticatedComprometidoRoute
   AuthenticatedFluxoRoute: typeof AuthenticatedFluxoRoute
   AuthenticatedLancamentosRoute: typeof AuthenticatedLancamentosRoute
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedPrevisaoRoute: typeof AuthenticatedPrevisaoRoute
   AuthenticatedReservasRoute: typeof AuthenticatedReservasRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
@@ -240,6 +280,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedComprometidoRoute: AuthenticatedComprometidoRoute,
   AuthenticatedFluxoRoute: AuthenticatedFluxoRoute,
   AuthenticatedLancamentosRoute: AuthenticatedLancamentosRoute,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedPrevisaoRoute: AuthenticatedPrevisaoRoute,
   AuthenticatedReservasRoute: AuthenticatedReservasRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
@@ -252,6 +293,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ConviteRoute: ConviteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

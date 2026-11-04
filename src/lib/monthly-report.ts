@@ -2,7 +2,7 @@ import { parseLocalDate, repeatsMonthly, installmentActive, type Income, type Ex
 
 export type ReportEntry = {
   id: string; type: "receita" | "despesa"; description: string; category: string;
-  amount: number; day: number; owner: string; fixed: boolean;
+  amount: number; day: number; owner: string; fixed: boolean; user_id: string;
 };
 const sameMonth = (date: Date, month: Date) => date.getFullYear() === month.getFullYear() && date.getMonth() === month.getMonth();
 const monthNumber = (date: Date) => date.getFullYear() * 12 + date.getMonth();
@@ -14,7 +14,7 @@ export function monthlyEntries(income: Income[], expenses: Expense[], month: Dat
     const date = entry.reference_month ? parseLocalDate(entry.reference_month) : null;
     if (date ? (entry.recurring ? monthNumber(date) > monthNumber(month) : !sameMonth(date, month)) : !entry.recurring) continue;
     result.push({ id: entry.id, type: "receita", description: entry.name, category: entry.category_label || entry.kind,
-      amount: Number(entry.amount), day: occurrenceDay(date?.getDate() ?? 5, month), owner: (entry as Income & { owner?: string }).owner ?? "ele", fixed: false });
+      amount: Number(entry.amount), day: occurrenceDay(date?.getDate() ?? 5, month), owner: (entry as Income & { owner?: string }).owner ?? "ele", fixed: false, user_id: (entry as Income & { user_id?: string }).user_id ?? "" });
   }
   for (const entry of expenses) {
     const date = parseLocalDate(entry.due_date);
@@ -24,7 +24,7 @@ export function monthlyEntries(income: Income[], expenses: Expense[], month: Dat
     if (recurring && !installmentActive(entry, elapsed)) continue;
     const parcel = Number(entry.installment_total) > 1 ? ` (${(Number(entry.installment_current) || 1) + Math.max(0, elapsed)}/${entry.installment_total})` : "";
     result.push({ id: entry.id, type: "despesa", description: entry.name + parcel, category: entry.category_label || entry.category,
-      amount: Number(entry.amount), day: occurrenceDay(recurring ? entry.due_day : date.getDate(), month), owner: (entry as Expense & { owner?: string }).owner ?? "ele", fixed: entry.category === "fixa" });
+      amount: Number(entry.amount), day: occurrenceDay(recurring ? entry.due_day : date.getDate(), month), owner: (entry as Expense & { owner?: string }).owner ?? "ele", fixed: entry.category === "fixa", user_id: (entry as Expense & { user_id?: string }).user_id ?? "" });
   }
   return result;
 }
@@ -95,7 +95,7 @@ export function horizonMonth(income: Income[], expenses: Expense[], transactions
   const startBalance = financial.filter((item) => new Date(item.occurred_at).getTime() < start).reduce((sum, item) => sum + Number(item.amount), 0);
   const movements = financial.filter((item) => sameMonth(new Date(item.occurred_at), month));
   const entries = monthlyEntries(income, expenses, month).filter((entry) => !movements.some((item) => item.reference_id === entry.id && item.kind === entry.type));
-  for (const item of movements) entries.push({ id: item.id ?? `movement-${entries.length}`, type: item.kind as "receita" | "despesa", description: item.description ?? "Movimentação", category: "Movimentação", amount: Math.abs(Number(item.amount)), day: new Date(item.occurred_at).getDate(), owner: item.owner ?? "ele", fixed: false });
+  for (const item of movements) entries.push({ id: item.id ?? `movement-${entries.length}`, type: item.kind as "receita" | "despesa", description: item.description ?? "Movimentação", category: "Movimentação", amount: Math.abs(Number(item.amount)), day: new Date(item.occurred_at).getDate(), owner: item.owner ?? "ele", fixed: false, user_id: (item as { user_id?: string }).user_id ?? "" });
   let balance = startBalance;
   let totalIn = 0; let totalOut = 0;
   const rows = Array.from({ length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, i) => {
