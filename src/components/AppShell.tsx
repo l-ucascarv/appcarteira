@@ -8,19 +8,21 @@ import {
   LogOut,
   Moon,
   Sun,
+  UserRound,
 } from "lucide-react";
 import logoLight from "@/assets/logo-full.png";
 import logoDark from "@/assets/logo-full-dark.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const NAV = [
   { to: "/", label: "saldos", icon: Wallet },
   { to: "/tags", label: "tags", icon: Tags },
   { to: "/comprometido", label: "comprometido", icon: CalendarCheck },
+  { to: "/perfil", label: "perfil", icon: UserRound },
 ] as const;
 
 const ACTIONS = [
@@ -33,6 +35,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [theme, setTheme] = useTheme();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const token = sessionStorage.getItem("pending_invite");
+    if (token && loc.pathname !== "/convite") navigate({ to: "/convite", search: { token } });
+  }, [loc.pathname, navigate]);
 
   const signOut = async () => {
     await queryClient.cancelQueries();
@@ -106,6 +113,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           <img src={logoDark} alt="Meu Caixa" className="hidden h-8 w-auto dark:block" width={875} height={223} />
         </div>
         <div className="flex shrink-0 gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            aria-label="Perfil e família"
+            onClick={() => navigate({ to: "/perfil" })}
+          >
+            <UserRound className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
