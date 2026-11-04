@@ -143,7 +143,6 @@ function Lancamentos() {
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
-  const days = Array.from(new Set(rows.map((row) => row.day)));
   const openingBalance = realizedOpeningBalance(transactions, cursor);
   const togglePaid = async (r: Row) => {
     setToggling(`${r.table}-${r.id}`);
