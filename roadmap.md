@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Família compartilhada: perfil com convite por link, membros com visão conjunta e filtro individual; validar convite ponta a ponta.
 - [x] Reduzir carregamentos repetidos entre abas sem perder atualização dos lançamentos.
 - [x] Suavizar efeitos e verificar navegação autenticada, edição e sincronização entre abas.
 
