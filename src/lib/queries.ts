@@ -1,6 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Account, Expense, Income, Reserve } from "./finance";
+import { filterByScope, useViewScope } from "./view-scope";
+
+function useUid() {
+  return useQuery({ queryKey: ["uid"], staleTime: Infinity, queryFn: currentUserId }).data;
+}
+
+function useScopedFilter() {
+  const scope = useViewScope();
+  const uid = useUid();
+  return <T extends { user_id?: string | null }>(rows: T[]) => filterByScope(rows, scope, uid);
+}
 
 async function currentUserId() {
   const { data } = await supabase.auth.getUser();
