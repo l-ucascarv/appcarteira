@@ -1,6 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Account, Expense, Income, Reserve } from "./finance";
+import { filterByScope, useViewScope } from "./view-scope";
+
+function useUid() {
+  return useQuery({ queryKey: ["uid"], staleTime: Infinity, queryFn: currentUserId }).data;
+}
+
+function useScopedFilter() {
+  const scope = useViewScope();
+  const uid = useUid();
+  return { scope, uid };
+}
+
+function useScoped<T, Q extends { data?: T[] }>(q: Q & { data?: T[] }): Q {
+  const { scope, uid } = useScopedFilter();
+  const data = useMemo(() => (q.data ? (filterByScope(q.data as { user_id?: string | null }[], scope, uid) as T[]) : q.data), [q.data, scope, uid]);
+  return { ...q, data };
+}
 
 async function currentUserId() {
   const { data } = await supabase.auth.getUser();
@@ -31,7 +49,7 @@ export function useAccounts() {
 }
 
 export function useIncome() {
-  return useQuery({
+  return useScoped(useQuery({
     queryKey: ["income"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,18 +59,18 @@ export function useIncome() {
       if (error) throw error;
       return (data ?? []) as Income[];
     },
-  });
+  }));
 }
 
 export function useExpenses() {
-  return useQuery({
+  return useScoped(useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
       const { data, error } = await supabase.from("expenses").select("*").order("due_day");
       if (error) throw error;
       return (data ?? []) as Expense[];
     },
-  });
+  }));
 }
 
 export function useReserves() {
@@ -78,7 +96,7 @@ export function useGoals() {
 }
 
 export function useTransactions() {
-  return useQuery({
+  return useScoped(useQuery({
     queryKey: ["transactions"],
     queryFn: async () => {
       const rows = [];
@@ -91,7 +109,7 @@ export function useTransactions() {
       }
       return rows;
     },
-  });
+  }));
 }
 
 export function useInsights() {

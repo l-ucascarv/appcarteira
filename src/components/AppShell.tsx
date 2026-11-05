@@ -10,7 +10,22 @@ import {
   Sun,
   UserRound,
 } from "lucide-react";
+import { setViewScope, useViewScope } from "@/lib/view-scope";
 import logoLight from "@/assets/logo-full.png";
+
+function ScopeToggle() {
+  const scope = useViewScope();
+  return (
+    <div role="group" aria-label="Visão das finanças" className="mb-4 inline-flex rounded-lg bg-muted p-1 text-sm">
+      {(["pessoal", "familia"] as const).map((s) => (
+        <button key={s} type="button" aria-pressed={scope === s} onClick={() => setViewScope(s)}
+          className={`rounded-md px-3 py-1.5 font-medium transition-colors ${scope === s ? "bg-background text-foreground" : "text-muted-foreground"}`}>
+          {s === "pessoal" ? "Minhas finanças" : "Família"}
+        </button>
+      ))}
+    </div>
+  );
+}
 import logoDark from "@/assets/logo-full-dark.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/use-theme";
@@ -138,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="app-main min-w-0 md:pb-12 md:pl-60">
-        <div key={loc.pathname} className="page-content mx-auto min-w-0 max-w-5xl px-3 py-4 sm:px-5 sm:py-6 md:px-8 md:py-8">{children}</div>
+        <div key={loc.pathname} className="page-content mx-auto min-w-0 max-w-5xl px-3 py-4 sm:px-5 sm:py-6 md:px-8 md:py-8"><ScopeToggle />{children}</div>
       </main>
 
       {/* Bottom nav (mobile) */}
