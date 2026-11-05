@@ -14,9 +14,9 @@ function useScopedFilter() {
   return { scope, uid };
 }
 
-function useScoped<Q extends { data?: { user_id?: string | null }[] }>(q: Q): Q {
+function useScoped<T, Q extends { data?: T[] }>(q: Q & { data?: T[] }): Q {
   const { scope, uid } = useScopedFilter();
-  const data = useMemo(() => (q.data ? filterByScope(q.data, scope, uid) : q.data), [q.data, scope, uid]);
+  const data = useMemo(() => (q.data ? (filterByScope(q.data as { user_id?: string | null }[], scope, uid) as T[]) : q.data), [q.data, scope, uid]);
   return { ...q, data };
 }
 
