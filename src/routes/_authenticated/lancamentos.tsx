@@ -310,6 +310,22 @@ function Lancamentos() {
           <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
           <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />
           <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
+          <div className="sm:col-span-6">
+            <p className="mb-2 text-xs text-muted-foreground">Categorias rápidas</p>
+            <ChipRow>{(knownCategories.length ? knownCategories.slice(0,8) : ["Mercado","Transporte","Moradia","Saúde","Lazer","Outros"]).map((category) => (
+              <Chip key={category} selected={qCat === category} onClick={() => setQCat(category)}>{category}</Chip>
+            ))}</ChipRow>
+          </div>
+          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-muted/50 p-3 sm:col-span-6" role="group" aria-label="Teclado numérico para o valor">
+            {["1","2","3","4","5","6","7","8","9",",","0","⌫"].map((key) => (
+              <button key={key} type="button" className="min-h-12 rounded-xl bg-card text-lg font-semibold shadow-sm active:scale-95" aria-label={key === "⌫" ? "Apagar último dígito" : key} onClick={() => setQAmount((current) => {
+                if (key === "⌫") return current.slice(0,-1);
+                if (key === ",") return current.includes(".") ? current : (current || "0") + ".";
+                if (current.includes(".") && current.split(".")[1].length >= 2) return current;
+                return current === "0" ? key : current + key;
+              })}>{key}</button>
+            ))}
+          </div>
           <fieldset className="space-y-2 sm:col-span-6">
             <legend className="text-sm font-medium">{qType === "saida" ? "A despesa é fixa ou variável?" : "A receita é fixa ou variável?"}</legend>
             <Segmented

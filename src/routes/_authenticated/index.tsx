@@ -238,8 +238,9 @@ function Dashboard() {
           <ul className="space-y-2">{expenseCategoryTotals.slice(0,6).map((g,i)=><li key={g.category} className="flex items-center justify-between gap-2 text-xs"><span className="flex min-w-0 items-center gap-2"><i className="h-2 w-2 shrink-0 rounded-full" style={{background:categoryColors[i%categoryColors.length]}}/><span className="truncate capitalize">{g.category}</span></span><b className="tabular-nums">{g.percent.toLocaleString("pt-BR",{maximumFractionDigits:0})}%</b></li>)}</ul>
         </div> : <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma despesa categorizada neste mês.</p>}
       </Card>
-\n      <Card className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Evolução do saldo</h2><Segmented value={balancePeriod} onChange={setBalancePeriod} options={[{value:"semana",label:"Semana"},{value:"mes",label:"Mês"},{value:"ano",label:"Ano"}]} /></div>
+
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Evolução do saldo</h2><Segmented label="Período do saldo" value={balancePeriod} onChange={setBalancePeriod} options={[{value:"semana",label:"Semana"},{value:"mes",label:"Mês"},{value:"ano",label:"Ano"}]} /></div>
         <div className="h-44"><ResponsiveContainer><AreaChart data={balanceSeries}><XAxis dataKey="i" hide/><YAxis hide domain={["dataMin","dataMax"]}/><Tooltip formatter={(v)=>brl(Number(v))}/><Area dataKey="saldo" stroke="#D99B2B" fill="#D99B2B" fillOpacity={0.15} isAnimationActive={false}/></AreaChart></ResponsiveContainer></div>
       </Card>
       {/* Receitas x Despesas */}
