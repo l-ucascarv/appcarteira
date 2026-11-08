@@ -312,7 +312,7 @@ function Lancamentos() {
           <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
           <div className="sm:col-span-6">
             <p className="mb-2 text-xs text-muted-foreground">Categorias rápidas</p>
-            <ChipRow>{(knownCategories.length ? knownCategories.slice(0,8) : ["Mercado","Transporte","Moradia","Saúde","Lazer","Outros"]).map((category) => (
+            <ChipRow label="Categorias rápidas">{(knownCategories.length ? knownCategories.slice(0,8) : ["Mercado","Transporte","Moradia","Saúde","Lazer","Outros"]).map((category) => (
               <Chip key={category} selected={qCat === category} onClick={() => setQCat(category)}>{category}</Chip>
             ))}</ChipRow>
           </div>
