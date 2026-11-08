@@ -12,7 +12,7 @@ export function OwnerIcon({ owner, className = "" }: { owner: string; className?
       title={ownerLabel(isEla ? "ela" : "ele")}
       aria-label={ownerLabel(isEla ? "ela" : "ele")}
       className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-        isEla ? "bg-cat-diario/15 text-cat-diario" : "bg-primary/15 text-primary"
+        isEla ? "bg-cat-economia/20 text-cat-economia" : "bg-primary/20 text-primary-ink"
       } ${className}`}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -39,3 +39,4 @@ export function OwnerSelect({ value, onChange }: { value: Owner; onChange: (v: O
     </div>
   );
 }
+

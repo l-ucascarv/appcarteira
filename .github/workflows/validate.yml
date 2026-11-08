@@ -1,0 +1,19 @@
+name: Validate app
+on:
+  push:
+    branches: [main, feat/mobile-redesign]
+  pull_request:
+    branches: [main]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: "bunx eslint . --rule 'prettier/prettier: off'"
+      - run: bun test
+      - run: bun run build

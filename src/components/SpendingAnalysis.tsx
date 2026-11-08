@@ -18,12 +18,12 @@ export function SpendingAnalysis({ signature }: { signature: string }) {
     catch (error) { setResult({ data: null, error: error instanceof Error ? error.message : "Erro na análise" }); }
     finally { setBusy(false); }
   }
-  return <section className="spending-analysis space-y-3 border-b border-border pb-6">
+  return <section className="spending-analysis space-y-3 rounded-2xl bg-card p-5 shadow-[var(--shadow-card)]">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="h-4 w-4 text-primary" />Disponível para gastar</h2>
-      <Button variant="outline" size="sm" disabled={busy} onClick={run}><RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Analisando…" : "Analisar com IA"}</Button>
+      <h2 className="flex items-center gap-2 text-base font-bold"><Sparkles className="h-4 w-4 text-primary-ink" />Disponível para gastar</h2>
+      <Button variant="dark" size="sm" disabled={busy} onClick={run}><RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Analisando…" : "Analisar com IA"}</Button>
     </div>
-    <div className="text-3xl font-semibold tabular-nums">{!stale && result?.data ? brl(result.data.available) : "—"}</div>
+    <div className="text-3xl font-bold tracking-tight tabular-nums">{!stale && result?.data ? brl(result.data.available) : "—"}</div>
     {stale && <p className="text-sm text-muted-foreground">Lançamentos alterados. Atualize a análise.</p>}
     {result?.error && <p role="alert" className="text-sm text-danger">{result.error}</p>}
     {!stale && result?.data && <>
