@@ -25,11 +25,11 @@ export const analyzeSpending = createServerFn({ method: "POST" })
     const { analyze } = await import("./ai-finance.server");
     return analyze(getRequest(), context.supabase);
   });
-const chatInput = z.object({ messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(4000) })).min(1).max(30) });
+const chatInput = z.object({ messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(4000) })).min(1).max(30), scope: z.enum(["pessoal", "familia"]).default("pessoal") });
 export const chatFinance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => chatInput.parse(input))
   .handler(async ({ data, context }) => {
     const { chat } = await import("./ai-finance.server");
-    return chat(getRequest(), context.supabase, data.messages);
+    return chat(getRequest(), context.supabase, data.messages, context.userId, data.scope);
   });
