@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Adaptar apenas o visual mobile à referência e validar navegação e extrato sem alterar dados ou análises.
+- [x] Adaptar apenas o visual mobile à referência e validar navegação e extrato sem alterar dados ou análises.
 
 - [ ] Família compartilhada: perfil com convite por link, membros com visão conjunta e filtro individual; validar convite ponta a ponta.
 - [x] Reduzir carregamentos repetidos entre abas sem perder atualização dos lançamentos.
