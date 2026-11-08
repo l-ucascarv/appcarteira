@@ -1,10 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Wallet,
-  Tags,
+  House,
+  ReceiptText,
+  CircleHelp,
   Plus,
-  CalendarDays,
-  CalendarCheck,
   LogOut,
   Moon,
   Sun,
@@ -37,16 +36,12 @@ function ScopeToggle() {
 }
 
 const NAV = [
-  { to: "/", label: "Saldos", icon: Wallet },
-  { to: "/tags", label: "Tags", icon: Tags },
-  { to: "/comprometido", label: "Comprometido", icon: CalendarCheck },
+  { to: "/", label: "Home", icon: House },
+  { to: "/lancamentos", label: "Lançamentos", icon: ReceiptText },
+  { to: "/faq", label: "FAQ", icon: CircleHelp },
   { to: "/perfil", label: "Perfil", icon: UserRound },
 ] as const;
-
-const ACTIONS = [
-  { to: "/lancamentos", label: "Adicionar", icon: Plus },
-  { to: "/calendario", label: "Calendário", icon: CalendarDays },
-] as const;
+const ADD = { to: "/lancamentos", label: "Adicionar", icon: Plus } as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const loc = useLocation();
@@ -86,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {NAV.map((n) => {
             const Icon = n.icon;
             return (
-              <Link key={n.label} to={n.to} preload="viewport" className={itemClass(loc.pathname === n.to)}>
+              <Link key={n.label} to={n.to} hash={n.label === "Adicionar" ? "novo-lancamento" : undefined} preload="viewport" className={itemClass(loc.pathname === n.to)}>
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {n.label}
               </Link>
@@ -97,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="my-4 h-px bg-border" />
 
         <nav className="flex flex-1 flex-col gap-0.5">
-          {ACTIONS.map((n) => {
+          {[ADD].map((n) => {
             const Icon = n.icon;
             return (
               <Link key={n.label} to={n.to} preload="viewport" className={itemClass(loc.pathname === n.to)}>
@@ -153,20 +148,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Bottom nav (mobile) */}
       <nav aria-label="Navegação principal" className="mobile-bottom-bar fixed bottom-0 left-0 right-0 z-30 bg-card md:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
-          {[NAV[0], NAV[1], ACTIONS[0], NAV[2], ACTIONS[1]].map((n) => {
-            const active = loc.pathname === n.to;
+          {[NAV[0], NAV[1], ADD, NAV[2], NAV[3]].map((n) => {
+            const active = n.label !== "Adicionar" && loc.pathname === n.to;
             const Icon = n.icon;
             return (
               <Link
                 key={n.label}
                 to={n.to}
+                hash={n.label === "Adicionar" ? "novo-lancamento" : undefined}
                 preload="viewport"
                 aria-current={active ? "page" : undefined}
-                className={`mobile-nav-item ${n.to === "/lancamentos" ? "mobile-nav-add" : ""} flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[11px] ${
+                className={`mobile-nav-item ${n.label === "Adicionar" ? "mobile-nav-add" : ""} flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[11px] ${
                   active ? "font-bold text-foreground" : "font-medium text-muted-foreground"
                 }`}
               >
-                <span className="nav-icon grid place-items-center"><Icon className={n.to === "/lancamentos" ? "h-6 w-6 shrink-0" : "h-[22px] w-[22px] shrink-0"} strokeWidth={active || n.to === "/lancamentos" ? 2.4 : 1.9} /></span>
+                <span className="nav-icon grid place-items-center"><Icon className={n.label === "Adicionar" ? "h-6 w-6 shrink-0" : "h-[22px] w-[22px] shrink-0"} strokeWidth={active || n.label === "Adicionar" ? 2.4 : 1.9} /></span>
                 <span className="max-w-full whitespace-nowrap text-center leading-tight">{n.label}</span>
               </Link>
             );
