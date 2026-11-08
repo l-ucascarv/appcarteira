@@ -12,13 +12,14 @@ import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
-import { monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "@/lib/monthly-report";
+import { monthlyEntries, categoryTotals, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { EntryAiTools } from "@/components/EntryAiTools";
 import { quickEntrySchedule, type EntryClassification } from "@/lib/quick-entry";
 import { useFamilyOverview } from "@/lib/family";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const AddIncomeDialog = lazy(() => import("@/components/AddIncomeDialog").then((module) => ({ default: module.AddIncomeDialog })));
 const AddExpenseDialog = lazy(() => import("@/components/AddExpenseDialog").then((module) => ({ default: module.AddExpenseDialog })));
@@ -88,6 +89,8 @@ function Lancamentos() {
   const [editIncome, setEditIncome] = useState<EditableIncome | null>(null);
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
+  const [activityFilter, setActivityFilter] = useState<"todos" | "despesa" | "receita" | "recorrente">("todos");
+  const [showCategories, setShowCategories] = useState(true);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
@@ -145,6 +148,12 @@ function Lancamentos() {
     );
   }, [income, expenses, transactions, memberFilter, classFilter, q, sortOrder, year, month, cursor]);
 
+  const activityRows = rows.filter((row) => activityFilter === "todos" || (activityFilter === "recorrente" ? row.recurring : activityFilter === "receita" ? row.type === "entrada" : row.type === "saida"));
+  const categoryEntries = monthlyEntries(income, expenses, cursor).filter((entry) => memberFilter === "todos" || entry.user_id === memberFilter);
+  const spendingCategories = categoryTotals(categoryEntries, "despesa");
+  const earningCategories = categoryTotals(categoryEntries, "receita");
+  const donutColors = ["#E8A329", "#20AD8A", "#F07B63", "#7996D4", "#B58BD7", "#8A918D"];
+  const spentTotal = spendingCategories.reduce((sum, item) => sum + item.amount, 0);
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
@@ -287,7 +296,7 @@ function Lancamentos() {
         ))}
       </section>
 
-      <section className="quick-entry border-b border-border pb-5">
+      <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
           <div className="max-w-[180px]">
@@ -316,16 +325,7 @@ function Lancamentos() {
               <Chip key={category} selected={qCat === category} onClick={() => setQCat(category)}>{category}</Chip>
             ))}</ChipRow>
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-muted/50 p-3 sm:col-span-6" role="group" aria-label="Teclado numérico para o valor">
-            {["1","2","3","4","5","6","7","8","9",",","0","⌫"].map((key) => (
-              <button key={key} type="button" className="min-h-12 rounded-xl bg-card text-lg font-semibold shadow-sm active:scale-95" aria-label={key === "⌫" ? "Apagar último dígito" : key} onClick={() => setQAmount((current) => {
-                if (key === "⌫") return current.slice(0,-1);
-                if (key === ",") return current.includes(".") ? current : (current || "0") + ".";
-                if (current.includes(".") && current.split(".")[1].length >= 2) return current;
-                return current === "0" ? key : current + key;
-              })}>{key}</button>
-            ))}
-          </div>
+
           <fieldset className="space-y-2 sm:col-span-6">
             <legend className="text-sm font-medium">{qType === "saida" ? "A despesa é fixa ou variável?" : "A receita é fixa ou variável?"}</legend>
             <Segmented
