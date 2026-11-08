@@ -111,7 +111,7 @@ function Dashboard() {
   const balanceSeries = balancePeriod === "semana"
     ? transactions.filter((t) => t.balance_after !== null && new Date(t.occurred_at).getTime() >= Date.now() - 7 * 86400000).slice(0, 7).reverse().map((t, i) => ({ i, saldo: Number(t.balance_after) }))
     : balancePeriod === "ano"
-      ? Array.from({length:12},(_,i)=>{const d=new Date(now.getFullYear(),i+1,0);const t=transactions.filter(x=>x.balance_after!==null&&new Date(x.occurred_at)<=d).at(-1);return {i,saldo:Number(t?.balance_after??0)};})
+      ? Array.from({length:12},(_,i)=>{const d=new Date(now.getFullYear(),i+1,0);const t=transactions.filter(x=>x.balance_after!==null&&new Date(x.occurred_at)<=d).sort((a,b)=>new Date(b.occurred_at).getTime()-new Date(a.occurred_at).getTime())[0];return {i,saldo:Number(t?.balance_after??0)};})
       : evo;
 
   const tooltipStyle = { borderRadius: 16, border: "none", boxShadow: "var(--shadow-float)", background: "var(--color-card)" };
@@ -130,7 +130,7 @@ function Dashboard() {
       {/* Hero: saldo da conta com a evolução ao fundo */}
       <Card className="overflow-hidden p-0">
         <div className="px-5 pt-5">
-          <div className="text-sm font-semibold text-muted-foreground">Saldo da conta</div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><div className="text-sm font-semibold text-muted-foreground">Saldo da conta</div><Segmented label="Período do saldo" value={balancePeriod} onChange={setBalancePeriod} options={[{value:"semana",label:"Semana"},{value:"mes",label:"Mês"},{value:"ano",label:"Ano"}]} /></div>
           <div className="hero-balance-value mt-1 tabular-nums">{brl(accountBalance)}</div>
           <p className="mt-1 text-xs text-muted-foreground">
             Somente realizado · saldo anterior ao mês: {brl(openingBalance)}
@@ -138,7 +138,7 @@ function Dashboard() {
         </div>
         <div className="mt-4 h-28" role="img" aria-label="Evolução do saldo nas últimas movimentações">
           <ResponsiveContainer>
-            <AreaChart data={evo} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+            <AreaChart data={balanceSeries} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="balance-fill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
@@ -239,10 +239,6 @@ function Dashboard() {
         </div> : <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma despesa categorizada neste mês.</p>}
       </Card>
 
-      <Card className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Evolução do saldo</h2><Segmented label="Período do saldo" value={balancePeriod} onChange={setBalancePeriod} options={[{value:"semana",label:"Semana"},{value:"mes",label:"Mês"},{value:"ano",label:"Ano"}]} /></div>
-        <div className="h-44"><ResponsiveContainer><AreaChart data={balanceSeries}><XAxis dataKey="i" hide/><YAxis hide domain={["dataMin","dataMax"]}/><Tooltip formatter={(v)=>brl(Number(v))}/><Area dataKey="saldo" stroke="#D99B2B" fill="#D99B2B" fillOpacity={0.15} isAnimationActive={false}/></AreaChart></ResponsiveContainer></div>
-      </Card>
       {/* Receitas x Despesas */}
       <Card className="p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
