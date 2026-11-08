@@ -68,7 +68,7 @@ export function buildCashPlan(input: { income: Income[]; expenses: Expense[]; tr
 export type DebtAdvice={date:string|null;possible:boolean;reason:string;balanceAfter:number|null};
 /** Simulate settling one existing scheduled debt once, not an extra payment on top of its due date. */
 export function suggestDebtPayment(plan:CashPlan,expense:Expense,options?:{discount?:number;extraCostIfDelayed?:number;safetyMargin?:number}):DebtAdvice{
-  const amount=Math.max(0,valid(expense.amount)-Math.max(0,valid(options?.discount)));
+  const amount=Math.max(0,valid(expense.amount)-Math.min(valid(expense.amount),Math.max(0,valid(options?.discount))));
   const threshold=plan.reserved+Math.max(0,valid(options?.safetyMargin));
   const due=plan.movements.find(m=>m.id===expense.id&&m.type==="despesa");
   if(!due)return {date:null,possible:false,reason:"Essa dívida não possui uma parcela pendente identificada na projeção. Cadastre o vencimento antes de simular.",balanceAfter:null};
@@ -76,7 +76,7 @@ export function suggestDebtPayment(plan:CashPlan,expense:Expense,options?:{disco
   for(const candidate of dates){
     // Replace scheduled installment with a payment on the candidate date.
     const simulated=plan.daily.map(d=>({date:d.date,balance:d.balance+(d.date>=due.date?due.amount:0)-(d.date>=candidate.date?amount:0)}));
-    const lowest=Math.min(plan.currentBalance-amount,...simulated.filter(d=>d.date>=candidate.date).map(d=>d.balance));
+    const lowest=Math.min(...simulated.filter(d=>d.date>=candidate.date).map(d=>d.balance));
     if(lowest>=threshold){
       const balanceAfter=simulated.find(d=>d.date===candidate.date)?.balance??null;
       return {date:candidate.date,possible:true,balanceAfter:balanceAfter===null?null:cents(balanceAfter),reason:options?.extraCostIfDelayed ? "Data candidata com caixa suficiente; compare juros, multas e desconto antes de decidir." : "Data candidata sem romper a reserva na projeção. Juros, multas e descontos ainda precisam ser informados para indicar a opção financeiramente mais barata."};
