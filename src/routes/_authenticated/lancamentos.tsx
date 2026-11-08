@@ -153,7 +153,6 @@ function Lancamentos() {
   const spendingCategories = categoryTotals(categoryEntries, "despesa");
   const earningCategories = categoryTotals(categoryEntries, "receita");
   const donutColors = ["#E8A329", "#20AD8A", "#F07B63", "#7996D4", "#B58BD7", "#8A918D"];
-  const spentTotal = spendingCategories.reduce((sum, item) => sum + item.amount, 0);
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
@@ -296,6 +295,18 @@ function Lancamentos() {
         ))}
       </section>
 
+      <section className="space-y-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+        <div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-bold">Categorias</h2><p className="text-xs text-muted-foreground">Gastos e receitas por categoria</p></div><Button type="button" variant="outline" size="sm" onClick={()=>setShowCategories(v=>!v)}>{showCategories?"Ocultar":"Mostrar"}</Button></div>
+        {showCategories && <div className="grid gap-5 lg:grid-cols-2">{([["despesa",spendingCategories],["receita",earningCategories]] as const).map(([kind,groups])=>{
+          const total=groups.reduce((sum,item)=>sum+item.amount,0);
+          return <div key={kind} className="min-w-0 space-y-3">
+            <div className="flex items-center justify-between"><h3 className="font-semibold">{kind==="despesa"?"Despesas":"Receitas"}</h3><strong className="tabular-nums">{brl(total)}</strong></div>
+            {groups.length ? <><div className="relative mx-auto h-48 max-w-64"><ResponsiveContainer><PieChart><Pie data={groups} dataKey="amount" nameKey="category" innerRadius="62%" outerRadius="88%" paddingAngle={2} stroke="none">{groups.map((item,i)=><Cell key={item.category} fill={donutColors[i%donutColors.length]}/>)}</Pie><Tooltip formatter={value=>brl(Number(value))}/></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="text-[11px] text-muted-foreground">{kind==="despesa"?"GASTOS":"RECEBIDO"}</span><strong className="text-lg tabular-nums">{brl(total)}</strong></div></div>
+              <div className="space-y-2">{groups.map((item,i)=><details key={item.category} className="rounded-xl bg-muted/40 px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm"><span className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{background:donutColors[i%donutColors.length]}}/><span className="truncate capitalize">{item.category}</span></span><span className="shrink-0 font-semibold tabular-nums">{item.percent.toLocaleString("pt-BR",{maximumFractionDigits:1})}% · {brl(item.amount)}</span></summary><ul className="mt-2 space-y-1 border-t border-border pt-2">{item.entries.map(entry=><li key={entry.id} className="flex justify-between gap-2 text-xs"><span className="truncate">{entry.description}</span><span className="shrink-0">{brl(entry.amount)}</span></li>)}</ul></details>)}</div></> : <p className="py-6 text-sm text-muted-foreground">Sem lançamentos neste período.</p>}
+          </div>;
+        })}</div>}
+      </section>
+      <div className="space-y-2"><h2 className="text-lg font-bold">Atividade</h2><ChipRow label="Filtrar lançamentos">{([{value:"todos",label:"Todos"},{value:"despesa",label:"Despesas"},{value:"receita",label:"Receitas"},{value:"recorrente",label:"Recorrentes"}] as const).map(item=><Chip key={item.value} selected={activityFilter===item.value} onClick={()=>setActivityFilter(item.value)}>{item.label}</Chip>)}</ChipRow></div>
       <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
@@ -387,13 +398,13 @@ function Lancamentos() {
           </select>
         </div>
 
-      {rows.length === 0 && (
+      {activityRows.length === 0 && (
         <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</p>
       )}
-      {rows.length > 0 && (
+      {activityRows.length > 0 && (
         <div className="space-y-8">
-          {renderGroup("Pagamentos realizados", "Já entraram no saldo da conta.", rows.filter((r) => r.paid), true)}
-          {renderGroup("Pendentes e futuros", "Constam no panorama, mas só alteram o caixa quando pagos ou recebidos.", rows.filter((r) => !r.paid), false)}
+          {renderGroup("Pagamentos realizados", "Já entraram no saldo da conta.", activityRows.filter((r) => r.paid), true)}
+          {renderGroup("Pendentes e futuros", "Constam no panorama, mas só alteram o caixa quando pagos ou recebidos.", activityRows.filter((r) => !r.paid), false)}
         </div>
       )}
       <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
