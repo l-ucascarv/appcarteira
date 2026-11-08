@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +104,9 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
   const [qDate, setQDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [qPending, setQPending] = useState(false);
   const [saving, setSaving] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [showQuickCategories, setShowQuickCategories] = useState(false);
+  const [showAddOptions, setShowAddOptions] = useState(false);
 
   const { data: transactions = [] } = useTransactions();
   const { data: family } = useFamilyOverview();
@@ -229,7 +232,7 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
               const balance = dailyBalances.find((item) => item.day === day)?.balance ?? 0;
               return <section key={day} aria-label={`Lançamentos do dia ${day}`} className="py-4">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pb-3">
-                  <div><h4 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h4><p className="text-[11px] text-muted-foreground">Total do dia: {brl(group.filter((row) => row.day === day).reduce((sum,row) => sum + (row.type === "entrada" ? row.amount : -row.amount), 0))}</p></div>
+                  <div><h4 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h4></div>
                   {showBalance && <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>}
                 </div>
                 <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] gap-4 border-b border-border pb-2 text-xs text-muted-foreground md:grid">
@@ -324,70 +327,36 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
         </section>
       </>}
 
-      {mode === "add" && <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
-          <div className="max-w-[180px]">
-            <EntryAiTools photoOnly type={qType === "entrada" ? "receita" : "despesa"} description={qName} amount={qAmount} onSuggestion={(suggestion) => {
-              setQName(suggestion.description); setQAmount(suggestion.amount !== null ? String(suggestion.amount) : "");
-              setQCat(suggestion.category); setQDate(suggestion.date ?? "");
-            }} />
-          </div>
+      {mode === "add" && <section id="novo-lancamento" className="quick-entry add-entry-panel rounded-[24px] border border-border/70 bg-card p-4 shadow-[0_10px_35px_rgba(0,0,0,0.14)] sm:p-6">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div><h1 className="text-lg font-bold">✍️ Novo lançamento</h1><p className="mt-1 text-xs text-muted-foreground">Preencha os dados essenciais</p></div>
+          <EntryAiTools photoOnly type={qType==="entrada"?"receita":"despesa"} description={qName} amount={qAmount} onSuggestion={suggestion=>{setQName(suggestion.description);setQAmount(suggestion.amount!==null?String(suggestion.amount):"");setQCat(suggestion.category);setQDate(suggestion.date??qDate);}}/>
         </div>
-        <form onSubmit={quickAdd} className="grid gap-3 sm:grid-cols-6">
-          <Segmented
-            label="Tipo de lançamento"
-            value={qType}
-            className="sm:col-span-2"
-            onChange={(t) => { if (qType !== t) { setQType(t); setQClass(null); setQInstallments(""); } }}
-            options={[{ value: "saida", label: "Saída", tone: "danger" }, { value: "entrada", label: "Entrada", tone: "success" }]}
-          />
-          <Input aria-label="Valor" type="number" inputMode="decimal" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="quick-amount sm:col-span-2" />
-          <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
-          <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
-          <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />
-          <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
-          <div className="sm:col-span-6">
-            <p className="mb-2 text-xs text-muted-foreground">Categorias rápidas</p>
-            <ChipRow label="Categorias rápidas">{(knownCategories.length ? knownCategories.slice(0,8) : ["Mercado","Transporte","Moradia","Saúde","Lazer","Outros"]).map((category) => (
-              <Chip key={category} selected={qCat === category} onClick={() => setQCat(category)}>{category}</Chip>
-            ))}</ChipRow>
+        <form onSubmit={quickAdd} className="space-y-4">
+          <Segmented label="Tipo de lançamento" value={qType} onChange={t=>{if(qType!==t){setQType(t);setQClass(null);setQInstallments("");}}} options={[{value:"saida",label:"↘ Despesa",tone:"danger"},{value:"entrada",label:"↗ Receita",tone:"success"}]}/>
+          <div className="rounded-2xl bg-muted/40 px-4 py-4">
+            <label htmlFor="quick-amount" className="mb-1 block text-xs text-muted-foreground">💰 Valor (R$)</label>
+            <Input id="quick-amount" aria-label="Valor" type="number" inputMode="decimal" step="0.01" min="0.01" placeholder="0,00" value={qAmount} onChange={e=>setQAmount(e.target.value)} required className="quick-amount h-14 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0"/>
           </div>
-
-          <fieldset className="space-y-2 sm:col-span-6">
-            <legend className="text-sm font-medium">{qType === "saida" ? "A despesa é fixa ou variável?" : "A receita é fixa ou variável?"}</legend>
-            <Segmented
-              label="Fixa ou variável"
-              value={qClass}
-              onChange={setQClass}
-              className="max-w-sm"
-              options={[{ value: "variavel", label: "Variável" }, { value: "fixa", label: "Fixa" }]}
-            />
-          </fieldset>
-          {qType === "saida" && qClass === "variavel" && (
-            <div className="space-y-1.5 sm:col-span-6">
-              <label htmlFor="quick-installments" className="text-sm font-medium">Quantidade de parcelas</label>
-              <Input id="quick-installments" type="number" min="1" step="1" placeholder="1 (à vista)" value={qInstallments} onChange={(e) => setQInstallments(e.target.value)} className="max-w-sm" />
-              {Number(qInstallments) > 1 && <p className="text-xs text-muted-foreground">{qInstallments} × {brl(Number(qAmount) || 0)} · Total {brl((Number(qAmount) || 0) * Number(qInstallments))}</p>}
-            </div>
-          )}
-          <Segmented
-            label="De quem é o lançamento"
-            value={qOwner}
-            onChange={setQOwner}
-            className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}
-            options={OWNERS.map((o) => ({ value: o, label: <><OwnerIcon owner={o} />{ownerLabel(o)}</> }))}
-          />
-          <label className="flex items-center gap-2 text-sm sm:col-span-6">
-            <input type="checkbox" checked={qPending} onChange={(e) => setQPending(e.target.checked)} />
-            Lançar como pendente (ainda não {qType === "entrada" ? "recebido" : "pago"})
-          </label>
-          <Button type="submit" disabled={saving || !qClass} className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}><Plus className="mr-1 h-4 w-4" />{saving ? "Salvando..." : "Adicionar"}</Button>
+          <div className="space-y-3">
+            <div><label htmlFor="quick-description" className="mb-1.5 block text-xs font-medium">📝 Descrição</label><Input id="quick-description" maxLength={200} placeholder="Ex.: Mercado, salário..." value={qName} onChange={e=>setQName(e.target.value)} required className="h-12 rounded-xl"/></div>
+            <div><label htmlFor="quick-category" className="mb-1.5 block text-xs font-medium">🏷️ Categoria</label><Input id="quick-category" list="known-categories" maxLength={80} placeholder="Ex.: Alimentação" value={qCat} onChange={e=>setQCat(e.target.value)} className="h-12 rounded-xl"/><datalist id="known-categories">{knownCategories.map(c=><option key={c} value={c}/>)}</datalist></div>
+            <button type="button" className="text-xs font-medium text-primary" aria-expanded={showQuickCategories} onClick={()=>setShowQuickCategories(v=>!v)}>{showQuickCategories?"Ocultar categorias":"🏷️ Categorias rápidas +"}</button>
+            {showQuickCategories && <ChipRow label="Categorias rápidas">{(knownCategories.length?knownCategories.slice(0,6):["Mercado","Transporte","Moradia","Saúde","Lazer","Outros"]).map(category=><Chip key={category} selected={qCat===category} onClick={()=>setQCat(category)}>{category}</Chip>)}</ChipRow>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="min-w-0"><label htmlFor="quick-date" className="mb-1.5 block text-xs font-medium">📅 Data</label><div className="relative"><Input ref={dateInputRef} id="quick-date" aria-label="Data" type="date" value={qDate} onChange={e=>setQDate(e.target.value)} required lang="pt-BR" className="h-12 w-full min-w-0 rounded-xl pr-2 text-sm" onClick={()=>{try{dateInputRef.current?.showPicker?.();}catch{/* O Safari abre seu seletor nativo ao tocar no campo. */}}}/></div></div>
+            <fieldset className="min-w-0"><legend className="mb-1.5 text-xs font-medium">🔁 Frequência</legend><Segmented label="Fixa ou variável" value={qClass} onChange={setQClass} options={[{value:"variavel",label:"Variável"},{value:"fixa",label:"Fixa"}]}/></fieldset>
+          </div>
+          <button type="button" className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-muted/30 px-3 py-3 text-sm font-medium" aria-expanded={showAddOptions} onClick={()=>setShowAddOptions(v=>!v)}><span>⚙️ Mais opções</span><span className="text-muted-foreground">{showAddOptions?"−":"+"}</span></button>
+          {showAddOptions && <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-3">
+            <div className="space-y-2"><p className="text-xs font-medium">👤 De quem é?</p><Segmented label="De quem é o lançamento" value={qOwner} onChange={setQOwner} options={OWNERS.map(o=>({value:o,label:<><OwnerIcon owner={o}/>{ownerLabel(o)}</>}))}/></div>
+            {qType==="saida"&&qClass==="variavel"&&<div className="space-y-1"><label htmlFor="quick-installments" className="text-xs font-medium">Parcelas</label><Input id="quick-installments" type="number" min="1" step="1" placeholder="1 (à vista)" value={qInstallments} onChange={e=>setQInstallments(e.target.value)}/>{Number(qInstallments)>1&&<p className="text-xs text-muted-foreground">{qInstallments} × {brl(Number(qAmount)||0)} · Total {brl((Number(qAmount)||0)*Number(qInstallments))}</p>}</div>}
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={qPending} onChange={e=>setQPending(e.target.checked)}/>🕒 Marcar como pendente</label>
+            <Button type="button" variant="link" size="sm" className="px-0" onClick={()=>(qType==="entrada"?setAddIncome(true):setAddExpense(true))}>Abrir formulário completo</Button>
+          </div>}
+          <Button type="submit" disabled={saving||!qClass} className="h-12 w-full rounded-xl text-sm font-semibold"><Plus className="mr-2 h-4 w-4"/>{saving?"Salvando...":"Salvar lançamento"}</Button>
         </form>
-        <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
-          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções</Button>
-          <span>· Por padrão o lançamento já entra como {qType === "entrada" ? "recebido" : "pago"}; marque pendente se ainda não foi {qType === "entrada" ? "recebido" : "pago"}</span>
-        </div>
       </section>}
 
       {mode === "statement" && <section className="space-y-3">
