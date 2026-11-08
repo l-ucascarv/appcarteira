@@ -8,7 +8,7 @@ import { Chip, ChipRow } from "@/components/ui/chip";
 import { brl } from "@/lib/format";
 import type { EditableIncome } from "@/components/AddIncomeDialog";
 import type { EditableExpense } from "@/components/AddExpenseDialog";
-import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
@@ -89,7 +89,8 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
   const [activityFilter, setActivityFilter] = useState<"todos" | "despesa" | "receita" | "recorrente">("todos");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [advancedFilters, setAdvancedFilters] = useState(false);
   const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
   const [addExpense, setAddExpense] = useState(false);
@@ -275,21 +276,54 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
         </div>
       </header>}
 
-      {mode === "statement" && <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
-        <div className="min-w-0"><p className="text-sm font-medium">Saldo anterior ao mês</p><p className="text-xs text-muted-foreground">Saldo realizado acumulado até o mês anterior</p></div>
-        <span className={`text-sm font-semibold tabular-nums ${openingBalance >= 0 ? "text-success" : "text-danger"}`}>{brl(openingBalance)}</span>
-      </div>}
-
-      {mode === "statement" && <section className="grid grid-cols-3 gap-2 sm:gap-3">
-        {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
-          <div key={l} className="min-w-0 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] sm:p-4">
-            <p className="text-xs text-muted-foreground">{l}</p>
-            <p className={`mt-1 break-words text-sm font-semibold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
+      {mode === "statement" && <>
+        <section aria-label="Resumo do mês" className="rounded-2xl bg-card p-3.5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3 text-xs">
+            <span className="text-muted-foreground">💰 Saldo anterior</span>
+            <strong className={`tabular-nums ${openingBalance>=0?"text-success":"text-danger"}`}>{brl(openingBalance)}</strong>
           </div>
-        ))}
-      </section>}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {([["↗ Entradas",totalIn,"text-success"],["↘ Saídas",totalOut,"text-danger"],["💵 Saldo",totalIn-totalOut,totalIn-totalOut>=0?"text-success":"text-danger"]] as const).map(([label,value,color])=>(
+              <div key={label} className="min-w-0 rounded-xl bg-muted/35 px-2 py-3">
+                <p className="text-[11px] text-muted-foreground">{label}</p>
+                <p className={`mt-1 break-words text-[clamp(11px,3vw,16px)] font-semibold tabular-nums ${color}`}>{brl(value)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="space-y-3" aria-label="Filtros do extrato">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold">📋 Extrato</h2>
+            <Button variant="ghost" size="sm" aria-expanded={advancedFilters} aria-controls="advanced-statement-filters" onClick={()=>setAdvancedFilters(v=>!v)}><SlidersHorizontal className="mr-1.5 h-4 w-4"/>Filtros {advancedFilters?"−":"+"}</Button>
+          </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"/>
+            <Input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar lançamento..." aria-label="Buscar lançamentos" className="h-11 rounded-xl pl-10"/>
+          </div>
+          <ChipRow label="Tipo de movimentação" className="statement-primary-filters">
+            {([{value:"todos",label:"Todos"},{value:"despesa",label:"↘ Despesas"},{value:"receita",label:"↗ Receitas"},{value:"recorrente",label:"🔁 Fixos"}] as const).map(item=><Chip key={item.value} selected={activityFilter===item.value} onClick={()=>setActivityFilter(item.value)}>{item.label}</Chip>)}
+          </ChipRow>
+          {advancedFilters && <div id="advanced-statement-filters" className="space-y-3 rounded-2xl border border-border bg-card p-3">
+            <label className="block space-y-1 text-xs text-muted-foreground">Pessoa
+              <select value={memberFilter} onChange={e=>setMemberFilter(e.target.value)} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground">
+                <option value="todos">Toda a família</option>
+                {(family?.members??[]).map(m=><option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+              </select>
+            </label>
+            <div className="space-y-1"><p className="text-xs text-muted-foreground">Classificação</p>
+              <ChipRow label="Classificação">{([["todas","Todas"],["fixa","Fixas"],["variavel","Variáveis"]] as const).map(([value,label])=><Chip key={value} selected={classFilter===value} onClick={()=>setClassFilter(value)}>{label}</Chip>)}</ChipRow>
+            </div>
+            <label className="block space-y-1 text-xs text-muted-foreground">Ordenar
+              <select value={sortOrder} onChange={e=>setSortOrder(e.target.value as "asc"|"desc")} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground">
+                <option value="desc">Mais recentes primeiro</option>
+                <option value="asc">Mais antigos primeiro</option>
+              </select>
+            </label>
+            <div className="border-t border-border pt-2"><Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-2 h-4 w-4"/>Limpar todos os lançamentos</Button></div>
+          </div>}
+        </section>
+      </>}
 
-      {mode === "statement" && <div className="space-y-2"><h2 className="text-lg font-bold">Atividade</h2><ChipRow label="Filtrar lançamentos">{([{value:"todos",label:"Todos"},{value:"despesa",label:"Despesas"},{value:"receita",label:"Receitas"},{value:"recorrente",label:"Recorrentes"}] as const).map(item=><Chip key={item.value} selected={activityFilter===item.value} onClick={()=>setActivityFilter(item.value)}>{item.label}</Chip>)}</ChipRow></div>}
       {mode === "add" && <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
@@ -357,37 +391,13 @@ export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add"
       </section>}
 
       {mode === "statement" && <section className="space-y-3">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <h2 className="text-base font-bold">Extrato do mês</h2>
-          <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
-          <div className="relative col-span-2 sm:col-span-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="rounded-full pl-10" />
-          </div>
-          <select aria-label="Membro da família" value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="h-11 rounded-xl border border-input bg-card px-4 text-sm">
-            <option value="todos">Família</option>
-            {(family?.members ?? []).map((m) => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-          </select>
-          <ChipRow label="Classificação" className="col-span-2 sm:col-span-1">
-            {([["todas", "Todas"], ["fixa", "Fixas"], ["variavel", "Variáveis"]] as const).map(([value, label]) => (
-              <Chip key={value} selected={classFilter === value} onClick={() => setClassFilter(value)}>{label}</Chip>
-            ))}
-          </ChipRow>
-          <select aria-label="Ordem dos lançamentos" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")} className="col-span-2 h-11 rounded-xl border border-input bg-card px-4 text-sm sm:col-span-1">
-            <option value="asc">Data crescente · antigos primeiro</option>
-            <option value="desc">Data decrescente · recentes primeiro</option>
-          </select>
-        </div>
-
       {activityRows.length === 0 && (
         <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento encontrado.</p>
       )}
       {activityRows.length > 0 && (
         <div className="space-y-8">
-          {renderGroup("Pagamentos realizados", "Já entraram no saldo da conta.", activityRows.filter((r) => r.paid), true)}
-          {renderGroup("Pendentes e futuros", "Constam no panorama, mas só alteram o caixa quando pagos ou recebidos.", activityRows.filter((r) => !r.paid), false)}
+          {renderGroup("✅ Realizados", "Já entraram no saldo.", activityRows.filter((r) => r.paid), true)}
+          {renderGroup("🕒 Pendentes", "Entram no saldo quando pagos ou recebidos.", activityRows.filter((r) => !r.paid), false)}
         </div>
       )}
       <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
