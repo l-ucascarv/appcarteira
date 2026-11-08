@@ -398,3 +398,37 @@
 .finance-app .quick-entry { scroll-margin-top: 6rem; }
 .finance-app .statement-row:hover { background: var(--muted); }
 @media (max-width:767px) { .finance-app .page-content { padding-bottom: 6rem; } .finance-app .dashboard-view { gap: 0.75rem; } .finance-app .entries-view { gap: 1rem; } }
+
+/* iPhone 11/XR (414 CSS px), 15/16 (393 CSS px), and smaller viewports. */
+@media (max-width: 767px) {
+  html, body, #root { width: 100%; max-width: 100%; overflow-x: clip; }
+  .finance-app, .app-main, .page-content, .entries-view, .dashboard-view { width: 100%; max-width: 100%; min-width: 0; }
+  .page-content { padding-inline: 14px; padding-top: 12px; }
+  .mobile-top-bar { padding-inline: 16px; }
+  .mobile-bottom-bar { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .mobile-bottom-bar > div { width: 100%; grid-template-columns: repeat(5, minmax(0,1fr)); padding-inline: 4px; }
+  .mobile-nav-item { min-width: 0; padding-inline: 0; font-size: 10px; }
+  .mobile-nav-item > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  .entries-view > *, .entries-view section, .entries-view form, .entries-view form > *, .dashboard-view > *, .dashboard-view .grid > * { min-width: 0; max-width: 100%; }
+  .entries-view input, .entries-view select, .entries-view textarea { width: 100%; min-width: 0; max-width: 100%; font-size: 16px; }
+  .entries-view input[type="date"] { display: block; min-height: 48px; appearance: auto; }
+  .add-entry-view .quick-entry { border-radius: 20px; padding: 16px; overflow: hidden; }
+  .add-entry-view .quick-entry form { display: flex; flex-direction: column; gap: 12px; }
+  .add-entry-view .quick-entry form > * { width: 100%; max-width: 100%; min-width: 0; }
+  .add-entry-view .quick-entry form .quick-amount { min-height: 72px; font-size: 30px; }
+  .add-entry-view .quick-entry form fieldset { min-width: 0; }
+  .add-entry-view .quick-entry form fieldset > div { max-width: 100%; }
+  .add-entry-view .quick-entry form button[type="submit"] { min-height: 48px; }
+  .statement-view .statement-row { border-radius: 14px; }
+  .statement-view .grid.grid-cols-3 { gap: 7px; }
+  .statement-view .grid.grid-cols-3 > div { padding: 10px; }
+  .statement-view .grid.grid-cols-3 p:last-child { font-size: clamp(11px, 3vw, 15px); overflow-wrap: anywhere; }
+  .dashboard-view [data-slot="card"] { border-radius: 18px; }
+  .dashboard-view .hero-balance-value { font-size: clamp(30px, 9vw, 42px); overflow-wrap: anywhere; }
+  .dashboard-view .recharts-responsive-container { min-width: 0; }
+}
+@media (max-width: 375px) {
+  .page-content { padding-inline: 10px; }
+  .mobile-nav-item { font-size: 9px; }
+  .add-entry-view .quick-entry { padding: 12px; }
+}
