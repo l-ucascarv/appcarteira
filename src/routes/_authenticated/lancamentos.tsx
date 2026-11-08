@@ -226,7 +226,7 @@ function Lancamentos() {
               const balance = dailyBalances.find((item) => item.day === day)?.balance ?? 0;
               return <section key={day} aria-label={`Lançamentos do dia ${day}`} className="py-4">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pb-3">
-                  <h4 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h4>
+                  <div><h4 className="text-sm font-semibold">{new Date(year, month, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</h4><p className="text-[11px] text-muted-foreground">Total do dia: {brl(group.filter((row) => row.day === day).reduce((sum,row) => sum + (row.type === "entrada" ? row.amount : -row.amount), 0))}</p></div>
                   {showBalance && <div className="text-right"><span className="block text-[11px] text-muted-foreground">Saldo do dia</span><span className={`text-sm font-semibold tabular-nums ${balance >= 0 ? "text-success" : "text-danger"}`}>{brl(balance)}</span></div>}
                 </div>
                 <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] gap-4 border-b border-border pb-2 text-xs text-muted-foreground md:grid">
@@ -305,7 +305,7 @@ function Lancamentos() {
             onChange={(t) => { if (qType !== t) { setQType(t); setQClass(null); setQInstallments(""); } }}
             options={[{ value: "saida", label: "Saída", tone: "danger" }, { value: "entrada", label: "Entrada", tone: "success" }]}
           />
-          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="quick-amount sm:col-span-2" />
+          <Input aria-label="Valor" type="number" inputMode="decimal" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="quick-amount sm:col-span-2" />
           <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
           <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
           <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />

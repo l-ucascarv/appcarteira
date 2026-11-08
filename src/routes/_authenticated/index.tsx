@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { Segmented } from "@/components/ui/segmented";
+import { monthlyEntries, categoryTotals } from "@/lib/monthly-report";
 import { Button } from "@/components/ui/button";
 import { SpendingAnalysis } from "@/components/SpendingAnalysis";
 import { ReserveDialog } from "@/components/ReserveDialog";
@@ -25,7 +27,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 import { CircleDollarSign, PiggyBank, ShieldCheck, Wallet, TrendingUp, TrendingDown, Sparkles, CalendarClock } from "lucide-react";
 
@@ -54,6 +56,7 @@ function Dashboard() {
   const accountBalance = realizedBalance(transactions);
   const openingBalance = realizedOpeningBalance(transactions, new Date());
   const [reserveOpen, setReserveOpen] = useState(false);
+  const [balancePeriod, setBalancePeriod] = useState<"semana" | "mes" | "ano">("mes");
   const reservedBalance = reserves.reduce((sum, reserve) => sum + Number(reserve.current_amount), 0);
   const committedBalance = fixedMonthlyExpenses(expenses, new Date()).reduce((sum, expense) => sum + expense.amount, 0);
   const monthReceita = monthIncomeExpected(income);
@@ -102,6 +105,14 @@ function Dashboard() {
   const recentTransactions = transactions
     .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
     .slice(0, 8);
+
+  const expenseCategoryTotals = categoryTotals(monthlyEntries(income, expenses, new Date()), "despesa");
+  const categoryColors = ["#E7A93B", "#35A58B", "#E4775D", "#7C8FC7", "#B38ACB", "#8C9A91"];
+  const balanceSeries = balancePeriod === "semana"
+    ? transactions.filter((t) => t.balance_after !== null && new Date(t.occurred_at).getTime() >= Date.now() - 7 * 86400000).slice(0, 7).reverse().map((t, i) => ({ i, saldo: Number(t.balance_after) }))
+    : balancePeriod === "ano"
+      ? Array.from({length:12},(_,i)=>{const d=new Date(now.getFullYear(),i+1,0);const t=transactions.filter(x=>x.balance_after!==null&&new Date(x.occurred_at)<=d).at(-1);return {i,saldo:Number(t?.balance_after??0)};})
+      : evo;
 
   const tooltipStyle = { borderRadius: 16, border: "none", boxShadow: "var(--shadow-float)", background: "var(--color-card)" };
 
@@ -220,6 +231,17 @@ function Dashboard() {
         )}
       </Card>
 
+      <Card className="p-5">
+        <div className="mb-3"><h2 className="text-base font-bold">Gastos por categoria</h2><p className="text-xs text-muted-foreground">Distribuição das despesas previstas no mês, conforme Tags.</p></div>
+        {expenseCategoryTotals.length ? <div className="grid grid-cols-[minmax(120px,1fr)_minmax(0,1fr)] items-center gap-2">
+          <div className="h-44"><ResponsiveContainer><PieChart><Pie data={expenseCategoryTotals} dataKey="amount" nameKey="category" innerRadius="62%" outerRadius="88%" paddingAngle={3}>{expenseCategoryTotals.map((g,i)=><Cell key={g.category} fill={categoryColors[i%categoryColors.length]}/>)}</Pie><Tooltip formatter={(v)=>brl(Number(v))}/></PieChart></ResponsiveContainer></div>
+          <ul className="space-y-2">{expenseCategoryTotals.slice(0,6).map((g,i)=><li key={g.category} className="flex items-center justify-between gap-2 text-xs"><span className="flex min-w-0 items-center gap-2"><i className="h-2 w-2 shrink-0 rounded-full" style={{background:categoryColors[i%categoryColors.length]}}/><span className="truncate capitalize">{g.category}</span></span><b className="tabular-nums">{g.percent.toLocaleString("pt-BR",{maximumFractionDigits:0})}%</b></li>)}</ul>
+        </div> : <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma despesa categorizada neste mês.</p>}
+      </Card>
+\n      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Evolução do saldo</h2><Segmented value={balancePeriod} onChange={setBalancePeriod} options={[{value:"semana",label:"Semana"},{value:"mes",label:"Mês"},{value:"ano",label:"Ano"}]} /></div>
+        <div className="h-44"><ResponsiveContainer><AreaChart data={balanceSeries}><XAxis dataKey="i" hide/><YAxis hide domain={["dataMin","dataMax"]}/><Tooltip formatter={(v)=>brl(Number(v))}/><Area dataKey="saldo" stroke="#D99B2B" fill="#D99B2B" fillOpacity={0.15} isAnimationActive={false}/></AreaChart></ResponsiveContainer></div>
+      </Card>
       {/* Receitas x Despesas */}
       <Card className="p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
