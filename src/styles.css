@@ -432,3 +432,17 @@
   .mobile-nav-item { font-size: 9px; }
   .add-entry-view .quick-entry { padding: 12px; }
 }
+
+/* Compact mobile add form, iOS native date picker and elevated panel. */
+.add-entry-panel { box-shadow: 0 12px 36px rgb(0 0 0 / 0.14), 0 2px 8px rgb(0 0 0 / 0.08); }
+.add-entry-panel input[type="date"] { color-scheme: dark; -webkit-appearance: auto; appearance: auto; }
+.add-entry-panel input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.8; cursor: pointer; }
+.add-entry-panel fieldset { min-width: 0; }
+.add-entry-panel .quick-amount { font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .add-entry-view { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .add-entry-panel { width: 100%; max-width: 100%; overflow: visible; }
+  .add-entry-panel input { min-width: 0; max-width: 100%; }
+  .add-entry-panel .grid > * { min-width: 0; }
+  .add-entry-panel input[type="date"] { font-size: 13px; padding-left: 8px; padding-right: 2px; }
+}
