@@ -27,7 +27,7 @@ export function KpiCard({
   const hintColor = accent === "primary" ? "text-background/60" : "text-muted-foreground";
 
   return (
-    <Card className={`min-w-0 rounded-xl border p-3 shadow-none transition-colors sm:p-5 ${accentClass}`}>
+    <Card className={`kpi-card min-w-0 rounded-xl border p-3 shadow-none transition-colors sm:p-5 ${accentClass}`}>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <div className={`min-w-0 text-xs font-medium ${labelColor}`}>{label}</div>
         {icon ? <div className="shrink-0 opacity-70">{icon}</div> : null}

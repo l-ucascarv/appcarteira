@@ -16,12 +16,12 @@ import logoLight from "@/assets/logo-full.png";
 function ScopeToggle() {
   const scope = useViewScope();
   return (
-    <div role="group" aria-label="Visão das finanças" className="mb-4 inline-flex rounded-lg bg-muted p-1 text-sm">
+    <div role="group" aria-label="Visão das finanças" className="scope-toggle mb-4 inline-flex rounded-lg bg-muted p-1 text-sm">
       {(["pessoal", "familia"] as const).map((s) => (
-        <button key={s} type="button" aria-pressed={scope === s} onClick={() => setViewScope(s)}
+        <Button variant="ghost" size="sm" key={s} type="button" aria-pressed={scope === s} onClick={() => setViewScope(s)}
           className={`rounded-md px-3 py-1.5 font-medium transition-colors ${scope === s ? "bg-background text-foreground" : "text-muted-foreground"}`}>
           {s === "pessoal" ? "Minhas finanças" : "Família"}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }`;
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="finance-app min-h-dvh bg-background text-foreground">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border bg-card px-3 py-6 md:flex md:flex-col">
         <div className="mb-7 px-1">
@@ -158,8 +158,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Bottom nav (mobile) */}
       <nav aria-label="Navegação principal" className="mobile-bottom-bar fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-[1fr_.8fr_1.5fr_1.1fr_1fr] items-stretch">
-          {[NAV[0], NAV[1], NAV[2], ACTIONS[0], ACTIONS[1]].map((n) => {
+        <div className="mx-auto grid max-w-lg grid-cols-[1fr_1fr_1fr_1.4fr_1fr] items-stretch">
+          {[NAV[0], NAV[1], ACTIONS[0], NAV[2], ACTIONS[1]].map((n) => {
             const active = loc.pathname === n.to;
             const Icon = n.icon;
             return (
@@ -168,11 +168,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={n.to}
                 preload="viewport"
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] lowercase ${
+                className={`mobile-nav-item ${n.to === "/lancamentos" ? "mobile-nav-add" : ""} flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] lowercase ${
                   active ? "font-semibold text-primary" : "text-muted-foreground"
                 }`}
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <span className="nav-icon grid place-items-center"><Icon className="h-5 w-5 shrink-0" /></span>
                 <span className="max-w-full whitespace-nowrap text-center leading-tight">{n.label}</span>
               </Link>
             );
