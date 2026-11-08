@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { monthlyEntries, categoryTotals } from "@/lib/monthly-report";
 import { Button } from "@/components/ui/button";
-import { SpendingAnalysis } from "@/components/SpendingAnalysis";
 import { ReserveDialog } from "@/components/ReserveDialog";
 import {
   useAccounts,
@@ -123,7 +122,7 @@ function Dashboard() {
           {greet(profile?.name ?? "Lucas")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Aqui está a visão real do seu dinheiro hoje.
+          Seu dinheiro em um só lugar.
         </p>
       </div>
 
@@ -173,8 +172,7 @@ function Dashboard() {
         />
       </div>
 
-      {/* Disponível para gastar (análise por IA) */}
-      <SpendingAnalysis signature={JSON.stringify([income, expenses, transactions, reserves])} />
+
 
       {/* Barra da reserva */}
       {emergencia && (
