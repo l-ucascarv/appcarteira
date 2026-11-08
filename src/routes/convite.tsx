@@ -68,7 +68,7 @@ function Convite() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary-ink">
           <Users className="h-6 w-6" />
         </span>
         {!token && <p className="text-sm text-muted-foreground">Este link de convite está incompleto.</p>}
@@ -104,3 +104,4 @@ function Convite() {
     </div>
   );
 }
+

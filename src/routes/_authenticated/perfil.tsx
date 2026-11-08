@@ -77,7 +77,7 @@ function Perfil() {
           {isLoading && <li className="p-4 text-sm text-muted-foreground">Carregando membros…</li>}
           {overview?.members.map((m) => (
             <li key={m.user_id} className="flex items-center gap-3 p-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary-ink">
                 {m.name.trim().charAt(0).toUpperCase() || "?"}
               </span>
               <div className="min-w-0">
@@ -122,3 +122,4 @@ function Perfil() {
     </div>
   );
 }
+

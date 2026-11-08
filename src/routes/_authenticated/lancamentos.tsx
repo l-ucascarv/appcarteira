@@ -3,6 +3,8 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { useIncome, useExpenses, useTransactions, useDeleteEntry, useDeleteAllEntries } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Segmented } from "@/components/ui/segmented";
+import { Chip, ChipRow } from "@/components/ui/chip";
 import { brl } from "@/lib/format";
 import type { EditableIncome } from "@/components/AddIncomeDialog";
 import type { EditableExpense } from "@/components/AddExpenseDialog";
@@ -214,7 +216,7 @@ function Lancamentos() {
     return (
       <div className="statement-group space-y-3">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+          <h3 className="text-base font-bold">{title}</h3>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
         {groupDays.length === 0 && <p className="py-3 text-sm text-muted-foreground">Nenhum lançamento neste grupo.</p>}
@@ -262,11 +264,11 @@ function Lancamentos() {
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Lançamentos</p>
-          <h1 className="break-words text-lg font-semibold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
+          <h1 className="break-words text-xl font-bold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="outline" onClick={() => shift(-1)} aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="min-w-14 rounded-md bg-muted px-1.5 py-1.5 text-center text-xs font-semibold sm:px-3 sm:text-sm">{MONTHS[month]}/{String(year).slice(2)}</span>
+          <span className="min-w-14 rounded-full bg-card px-3 py-2 text-center text-xs font-bold sm:text-sm">{MONTHS[month]}/{String(year).slice(2)}</span>
           <Button size="sm" variant="outline" onClick={() => shift(1)} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </header>
@@ -278,7 +280,7 @@ function Lancamentos() {
 
       <section className="grid grid-cols-3 gap-2 sm:gap-3">
         {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
-          <div key={l} className="min-w-0 rounded-lg border bg-card p-2.5 sm:p-4">
+          <div key={l} className="min-w-0 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] sm:p-4">
             <p className="text-xs text-muted-foreground">{l}</p>
             <p className={`mt-1 break-words text-sm font-semibold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
           </div>
@@ -287,7 +289,7 @@ function Lancamentos() {
 
       <section className="quick-entry border-b border-border pb-5">
         <div className="mb-4 flex items-start justify-between gap-4">
-          <h2 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
+          <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
           <div className="max-w-[180px]">
             <EntryAiTools photoOnly type={qType === "entrada" ? "receita" : "despesa"} description={qName} amount={qAmount} onSuggestion={(suggestion) => {
               setQName(suggestion.description); setQAmount(suggestion.amount !== null ? String(suggestion.amount) : "");
@@ -296,13 +298,13 @@ function Lancamentos() {
           </div>
         </div>
         <form onSubmit={quickAdd} className="grid gap-3 sm:grid-cols-6">
-          <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:col-span-2">
-            {(["saida", "entrada"] as const).map((t) => (
-              <Button key={t} type="button" variant="ghost" aria-pressed={qType === t} onClick={() => { if (qType !== t) { setQType(t); setQClass(null); setQInstallments(""); } }} className={`rounded-sm py-1.5 text-sm font-medium transition-colors ${qType === t ? (t === "entrada" ? "bg-background text-success shadow-sm" : "bg-background text-danger shadow-sm") : "text-muted-foreground"}`}>
-                {t === "entrada" ? "Entrada" : "Saída"}
-              </Button>
-            ))}
-          </div>
+          <Segmented
+            label="Tipo de lançamento"
+            value={qType}
+            className="sm:col-span-2"
+            onChange={(t) => { if (qType !== t) { setQType(t); setQClass(null); setQInstallments(""); } }}
+            options={[{ value: "saida", label: "Saída", tone: "danger" }, { value: "entrada", label: "Entrada", tone: "success" }]}
+          />
           <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="quick-amount sm:col-span-2" />
           <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
           <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
@@ -310,11 +312,13 @@ function Lancamentos() {
           <datalist id="known-categories">{knownCategories.map((c) => <option key={c} value={c} />)}</datalist>
           <fieldset className="space-y-2 sm:col-span-6">
             <legend className="text-sm font-medium">{qType === "saida" ? "A despesa é fixa ou variável?" : "A receita é fixa ou variável?"}</legend>
-            <div className="grid max-w-sm grid-cols-2 gap-1 rounded-md bg-muted p-1">
-              {(["variavel", "fixa"] as const).map((c) => (
-                <Button key={c} type="button" variant="ghost" aria-pressed={qClass === c} onClick={() => setQClass(c)} className={`rounded-sm py-1.5 text-sm font-medium ${qClass === c ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{c === "fixa" ? "Fixa" : "Variável"}</Button>
-              ))}
-            </div>
+            <Segmented
+              label="Fixa ou variável"
+              value={qClass}
+              onChange={setQClass}
+              className="max-w-sm"
+              options={[{ value: "variavel", label: "Variável" }, { value: "fixa", label: "Fixa" }]}
+            />
           </fieldset>
           {qType === "saida" && qClass === "variavel" && (
             <div className="space-y-1.5 sm:col-span-6">
@@ -323,11 +327,13 @@ function Lancamentos() {
               {Number(qInstallments) > 1 && <p className="text-xs text-muted-foreground">{qInstallments} × {brl(Number(qAmount) || 0)} · Total {brl((Number(qAmount) || 0) * Number(qInstallments))}</p>}
             </div>
           )}
-          <div className={`grid grid-cols-2 gap-1 rounded-md bg-muted p-1 ${qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}`}>
-            {OWNERS.map((o) => (
-              <Button key={o} type="button" variant="ghost" aria-pressed={qOwner === o} onClick={() => setQOwner(o)} className={`flex items-center justify-center gap-1.5 rounded-sm py-1.5 text-sm font-medium ${qOwner === o ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><OwnerIcon owner={o} />{ownerLabel(o)}</Button>
-            ))}
-          </div>
+          <Segmented
+            label="De quem é o lançamento"
+            value={qOwner}
+            onChange={setQOwner}
+            className={qType === "saida" ? "sm:col-span-2" : "sm:col-span-3"}
+            options={OWNERS.map((o) => ({ value: o, label: <><OwnerIcon owner={o} />{ownerLabel(o)}</> }))}
+          />
           <label className="flex items-center gap-2 text-sm sm:col-span-6">
             <input type="checkbox" checked={qPending} onChange={(e) => setQPending(e.target.checked)} />
             Lançar como pendente (ainda não {qType === "entrada" ? "recebido" : "pago"})
@@ -342,22 +348,24 @@ function Lancamentos() {
 
       <section className="space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Extrato do mês</h2>
+          <h2 className="text-base font-bold">Extrato do mês</h2>
           <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <div className="relative col-span-2 sm:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, categoria, fixa/variável" className="rounded-full pl-10" />
           </div>
-          <select aria-label="Membro da família" value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="h-10 rounded-md border bg-background px-3 text-sm">
+          <select aria-label="Membro da família" value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="h-11 rounded-xl border border-input bg-card px-4 text-sm">
             <option value="todos">Família</option>
             {(family?.members ?? []).map((m) => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
           </select>
-          <select aria-label="Classificação" value={classFilter} onChange={(e) => setClassFilter(e.target.value as typeof classFilter)} className="h-10 rounded-md border bg-background px-3 text-sm">
-            <option value="todas">Todas</option><option value="fixa">Fixas</option><option value="variavel">Variáveis</option>
-          </select>
-          <select aria-label="Ordem dos lançamentos" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")} className="col-span-2 h-10 rounded-md border bg-background px-3 text-sm sm:col-span-1">
+          <ChipRow label="Classificação" className="col-span-2 sm:col-span-1">
+            {([["todas", "Todas"], ["fixa", "Fixas"], ["variavel", "Variáveis"]] as const).map(([value, label]) => (
+              <Chip key={value} selected={classFilter === value} onClick={() => setClassFilter(value)}>{label}</Chip>
+            ))}
+          </ChipRow>
+          <select aria-label="Ordem dos lançamentos" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")} className="col-span-2 h-11 rounded-xl border border-input bg-card px-4 text-sm sm:col-span-1">
             <option value="asc">Data crescente · antigos primeiro</option>
             <option value="desc">Data decrescente · recentes primeiro</option>
           </select>
@@ -384,3 +392,4 @@ function Lancamentos() {
     </div>
   );
 }
+
