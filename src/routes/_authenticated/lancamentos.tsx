@@ -12,14 +12,13 @@ import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-
 import { OwnerIcon, OWNERS, ownerLabel, type Owner } from "@/components/OwnerBadge";
 import { toast } from "sonner";
 import { repeatsMonthly } from "@/lib/finance";
-import { monthlyEntries, categoryTotals, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "@/lib/monthly-report";
+import { monthlyEntries, realizedDailyBalances, realizedOpeningBalance, entryChronology, compareEntryChronology } from "@/lib/monthly-report";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { EntryAiTools } from "@/components/EntryAiTools";
 import { quickEntrySchedule, type EntryClassification } from "@/lib/quick-entry";
 import { useFamilyOverview } from "@/lib/family";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const AddIncomeDialog = lazy(() => import("@/components/AddIncomeDialog").then((module) => ({ default: module.AddIncomeDialog })));
 const AddExpenseDialog = lazy(() => import("@/components/AddExpenseDialog").then((module) => ({ default: module.AddExpenseDialog })));
@@ -72,7 +71,7 @@ const CAT_DOT: Record<string, string> = {
 };
 
 
-function Lancamentos() {
+export function Lancamentos({ mode = "statement" }: { mode?: "statement" | "add" }) {
   const { data: income = [] } = useIncome();
   const { data: expenses = [] } = useExpenses();
   const del = useDeleteEntry();
@@ -90,7 +89,6 @@ function Lancamentos() {
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null);
   const [q, setQ] = useState("");
   const [activityFilter, setActivityFilter] = useState<"todos" | "despesa" | "receita" | "recorrente">("todos");
-  const [showCategories, setShowCategories] = useState(true);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [classFilter, setClassFilter] = useState<"todas" | "fixa" | "variavel">("todas");
   const [addIncome, setAddIncome] = useState(false);
@@ -149,10 +147,6 @@ function Lancamentos() {
   }, [income, expenses, transactions, memberFilter, classFilter, q, sortOrder, year, month, cursor]);
 
   const activityRows = rows.filter((row) => activityFilter === "todos" || (activityFilter === "recorrente" ? row.recurring : activityFilter === "receita" ? row.type === "entrada" : row.type === "saida"));
-  const categoryEntries = monthlyEntries(income, expenses, cursor).filter((entry) => memberFilter === "todos" || entry.user_id === memberFilter);
-  const spendingCategories = categoryTotals(categoryEntries, "despesa");
-  const earningCategories = categoryTotals(categoryEntries, "receita");
-  const donutColors = ["#E8A329", "#20AD8A", "#F07B63", "#7996D4", "#B58BD7", "#8A918D"];
   const totalIn = rows.filter((r) => r.type === "entrada").reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter((r) => r.type === "saida").reduce((s, r) => s + r.amount, 0);
   const dailyBalances = useMemo(() => realizedDailyBalances(transactions, cursor), [transactions, cursor]);
@@ -268,8 +262,8 @@ function Lancamentos() {
   };
 
   return (
-    <div className="entries-view mx-auto max-w-5xl space-y-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-3">
+    <div className={`entries-view mx-auto max-w-5xl space-y-6 ${mode === "add" ? "add-entry-view" : "statement-view"}`}>
+      {mode === "statement" && <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Lançamentos</p>
           <h1 className="break-words text-xl font-bold first-letter:uppercase sm:text-2xl">{cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</h1>
@@ -279,35 +273,24 @@ function Lancamentos() {
           <span className="min-w-14 rounded-full bg-card px-3 py-2 text-center text-xs font-bold sm:text-sm">{MONTHS[month]}/{String(year).slice(2)}</span>
           <Button size="sm" variant="outline" onClick={() => shift(1)} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
         </div>
-      </header>
+      </header>}
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
+      {mode === "statement" && <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
         <div className="min-w-0"><p className="text-sm font-medium">Saldo anterior ao mês</p><p className="text-xs text-muted-foreground">Saldo realizado acumulado até o mês anterior</p></div>
         <span className={`text-sm font-semibold tabular-nums ${openingBalance >= 0 ? "text-success" : "text-danger"}`}>{brl(openingBalance)}</span>
-      </div>
+      </div>}
 
-      <section className="grid grid-cols-3 gap-2 sm:gap-3">
+      {mode === "statement" && <section className="grid grid-cols-3 gap-2 sm:gap-3">
         {([["Entradas", totalIn, "text-success"], ["Saídas", totalOut, "text-danger"], ["Saldo do mês", totalIn - totalOut, totalIn - totalOut >= 0 ? "text-success" : "text-danger"]] as const).map(([l, v, c]) => (
           <div key={l} className="min-w-0 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] sm:p-4">
             <p className="text-xs text-muted-foreground">{l}</p>
             <p className={`mt-1 break-words text-sm font-semibold tabular-nums sm:text-lg ${c}`}>{brl(v)}</p>
           </div>
         ))}
-      </section>
+      </section>}
 
-      <section className="space-y-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-        <div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-bold">Categorias</h2><p className="text-xs text-muted-foreground">Gastos e receitas por categoria</p></div><Button type="button" variant="outline" size="sm" onClick={()=>setShowCategories(v=>!v)}>{showCategories?"Ocultar":"Mostrar"}</Button></div>
-        {showCategories && <div className="grid gap-5 lg:grid-cols-2">{([["despesa",spendingCategories],["receita",earningCategories]] as const).map(([kind,groups])=>{
-          const total=groups.reduce((sum,item)=>sum+item.amount,0);
-          return <div key={kind} className="min-w-0 space-y-3">
-            <div className="flex items-center justify-between"><h3 className="font-semibold">{kind==="despesa"?"Despesas":"Receitas"}</h3><strong className="tabular-nums">{brl(total)}</strong></div>
-            {groups.length ? <><div className="relative mx-auto h-48 max-w-64"><ResponsiveContainer><PieChart><Pie data={groups} dataKey="amount" nameKey="category" innerRadius="62%" outerRadius="88%" paddingAngle={2} stroke="none">{groups.map((item,i)=><Cell key={item.category} fill={donutColors[i%donutColors.length]}/>)}</Pie><Tooltip formatter={value=>brl(Number(value))}/></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="text-[11px] text-muted-foreground">{kind==="despesa"?"GASTOS":"RECEBIDO"}</span><strong className="text-lg tabular-nums">{brl(total)}</strong></div></div>
-              <div className="space-y-2">{groups.map((item,i)=><details key={item.category} className="rounded-xl bg-muted/40 px-3 py-2"><summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm"><span className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{background:donutColors[i%donutColors.length]}}/><span className="truncate capitalize">{item.category}</span></span><span className="shrink-0 font-semibold tabular-nums">{item.percent.toLocaleString("pt-BR",{maximumFractionDigits:1})}% · {brl(item.amount)}</span></summary><ul className="mt-2 space-y-1 border-t border-border pt-2">{item.entries.map(entry=><li key={entry.id} className="flex justify-between gap-2 text-xs"><span className="truncate">{entry.description}</span><span className="shrink-0">{brl(entry.amount)}</span></li>)}</ul></details>)}</div></> : <p className="py-6 text-sm text-muted-foreground">Sem lançamentos neste período.</p>}
-          </div>;
-        })}</div>}
-      </section>
-      <div className="space-y-2"><h2 className="text-lg font-bold">Atividade</h2><ChipRow label="Filtrar lançamentos">{([{value:"todos",label:"Todos"},{value:"despesa",label:"Despesas"},{value:"receita",label:"Receitas"},{value:"recorrente",label:"Recorrentes"}] as const).map(item=><Chip key={item.value} selected={activityFilter===item.value} onClick={()=>setActivityFilter(item.value)}>{item.label}</Chip>)}</ChipRow></div>
-      <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+      {mode === "statement" && <div className="space-y-2"><h2 className="text-lg font-bold">Atividade</h2><ChipRow label="Filtrar lançamentos">{([{value:"todos",label:"Todos"},{value:"despesa",label:"Despesas"},{value:"receita",label:"Receitas"},{value:"recorrente",label:"Recorrentes"}] as const).map(item=><Chip key={item.value} selected={activityFilter===item.value} onClick={()=>setActivityFilter(item.value)}>{item.label}</Chip>)}</ChipRow></div>}
+      {mode === "add" && <section id="novo-lancamento" className="quick-entry scroll-mt-24 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-base font-bold">Novo lançamento</h2>
           <div className="max-w-[180px]">
@@ -371,9 +354,9 @@ function Lancamentos() {
           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => (qType === "entrada" ? setAddIncome(true) : setAddExpense(true))}>Mais opções</Button>
           <span>· Por padrão o lançamento já entra como {qType === "entrada" ? "recebido" : "pago"}; marque pendente se ainda não foi {qType === "entrada" ? "recebido" : "pago"}</span>
         </div>
-      </section>
+      </section>}
 
-      <section className="space-y-3">
+      {mode === "statement" && <section className="space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <h2 className="text-base font-bold">Extrato do mês</h2>
           <Button variant="ghost" size="sm" className="text-danger" onClick={removeAll} disabled={delAll.isPending}><Trash2 className="mr-1 h-4 w-4" /> Limpar tudo</Button>
@@ -408,7 +391,7 @@ function Lancamentos() {
         </div>
       )}
       <p className="text-xs text-muted-foreground">Só entram no saldo da conta quando marcados como pago ou recebido.</p>
-      </section>
+      </section>}
 
       <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Abrindo lançamento…</p>}>
         {addIncome && <AddIncomeDialog open={addIncome} onOpenChange={setAddIncome} />}
