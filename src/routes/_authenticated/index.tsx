@@ -23,6 +23,7 @@ import {
 import { brl, greet, shortMonth } from "@/lib/format";
 import { fixedMonthlyExpenses, realizedOpeningBalance } from "@/lib/monthly-report";
 import { KpiCard } from "@/components/KpiCard";
+import { PersonalPlanner } from "@/components/PersonalPlanner";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -157,6 +158,8 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      <PersonalPlanner />
 
       {/* Dinheiro separado */}
       <div className="grid grid-cols-2 gap-3">
