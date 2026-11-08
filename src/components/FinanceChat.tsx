@@ -7,7 +7,7 @@ import { Send } from "lucide-react";
 import { useViewScope } from "@/lib/view-scope";
 
 type Msg = { role: "user" | "assistant"; content: string };
-const SUGGESTIONS = ["Vou passar aperto em algum dia nos próximos meses?", "Como distribuir meus pagamentos para evitar apertos?", "Qual o melhor mês para uma compra grande?", "Quanto devo separar para reserva?", "Onde posso cortar gastos?"];
+const SUGGESTIONS = ["Vou passar aperto em algum dia nos próximos meses?", "Como distribuir meus pagamentos para evitar apertos?", "Qual o melhor mês para uma compra grande?", "Quanto devo separar para reserva?", "Onde posso cortar gastos?", "Posso quitar uma dívida sem ficar sem dinheiro?", "Qual a melhor data para pagar uma parcela?"];
 
 export function FinanceChat() {
   const send = useServerFn(chatFinance);
