@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { monthlyEntries, categoryTotals } from "@/lib/monthly-report";
@@ -28,7 +28,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
-import { CircleDollarSign, PiggyBank, ShieldCheck, Wallet, TrendingUp, TrendingDown, Sparkles, CalendarClock } from "lucide-react";
+import { CircleDollarSign, PiggyBank, ShieldCheck, TrendingUp, TrendingDown, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -93,26 +93,31 @@ function Dashboard() {
     return { m: shortMonth(d), Receitas: rec, Despesas: desp };
   });
 
-  // Evolução patrimonial (baseada em transactions.balance_after)
-  const evo = transactions
-    .filter((t) => t.balance_after !== null)
-    .slice(0, 12)
-    .reverse()
-    .map((t, i) => ({ i, saldo: Number(t.balance_after) }));
-  if (evo.length === 0) evo.push({ i: 0, saldo: patrimonio });
-
-  const recentTransactions = transactions
-    .filter((transaction) => transaction.kind === "receita" || transaction.kind === "despesa")
-    .slice(0, 8);
-
-  const expenseCategoryTotals = categoryTotals(monthlyEntries(income, expenses, new Date()), "despesa");
-  const categoryColors = ["#E7A93B", "#35A58B", "#E4775D", "#7C8FC7", "#B38ACB", "#8C9A91"];
-  const balanceSeries = balancePeriod === "semana"
-    ? transactions.filter((t) => t.balance_after !== null && new Date(t.occurred_at).getTime() >= Date.now() - 7 * 86400000).slice(0, 7).reverse().map((t, i) => ({ i, saldo: Number(t.balance_after) }))
+  // Série baseada em movimentações realizadas, sem depender de balance_after.
+  // Sempre fornece dois pontos para evitar gráficos vazios em períodos sem lançamentos.
+  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  const periodStart = balancePeriod === "semana"
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
     : balancePeriod === "ano"
-      ? Array.from({length:12},(_,i)=>{const d=new Date(now.getFullYear(),i+1,0);const t=transactions.filter(x=>x.balance_after!==null&&new Date(x.occurred_at)<=d).sort((a,b)=>new Date(b.occurred_at).getTime()-new Date(a.occurred_at).getTime())[0];return {i,saldo:Number(t?.balance_after??0)};})
-      : evo;
+      ? new Date(now.getFullYear(), 0, 1)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+  const completed = transactions
+    .filter((t) => (t.kind === "receita" || t.kind === "despesa") && Number.isFinite(Number(t.amount)))
+    .map((t) => ({ time: new Date(t.occurred_at).getTime(), amount: Number(t.amount) }))
+    .filter((t) => Number.isFinite(t.time) && t.time <= endDate.getTime())
+    .sort((a, b) => a.time - b.time);
+  const balanceAtStart = accountBalance - completed.filter(t => t.time >= periodStart.getTime()).reduce((sum,t)=>sum+t.amount,0);
+  let runningBalance = balanceAtStart;
+  const balanceSeries = [{ i: 0, saldo: balanceAtStart }, ...completed.filter(t=>t.time >= periodStart.getTime()).map((t,i)=>{
+    runningBalance += t.amount;
+    return { i: i+1, saldo: runningBalance };
+  })];
+  if (balanceSeries.length === 1) balanceSeries.push({i:1,saldo:accountBalance});
 
+  const reportEntries = monthlyEntries(income, expenses, now);
+  const expenseCategoryTotals = categoryTotals(reportEntries, "despesa");
+  const incomeCategoryTotals = categoryTotals(reportEntries, "receita");
+  const categoryColors = ["#E8A329","#1EB395","#F17A61","#7695DA","#AD84D5","#8C9A91"];
   const tooltipStyle = { borderRadius: 16, border: "none", boxShadow: "var(--shadow-float)", background: "var(--color-card)" };
 
   return (
@@ -135,8 +140,8 @@ function Dashboard() {
             Somente realizado · saldo anterior ao mês: {brl(openingBalance)}
           </p>
         </div>
-        <div className="mt-4 h-28" role="img" aria-label="Evolução do saldo nas últimas movimentações">
-          <ResponsiveContainer>
+        <div className="mt-4 h-36 min-w-0" role="img" aria-label="Evolução do saldo nas últimas movimentações">
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <AreaChart data={balanceSeries} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="balance-fill" x1="0" y1="0" x2="0" y2="1">
@@ -195,46 +200,23 @@ function Dashboard() {
         </Card>
       )}
 
-      {/* Últimos lançamentos */}
-      <Card className="overflow-hidden p-0">
-        <div className="flex items-center justify-between gap-3 px-5 pb-2 pt-5">
-          <div>
-            <h2 className="text-base font-bold">Últimos lançamentos</h2>
-            <p className="text-xs text-muted-foreground">Movimentações que formam o saldo da conta.</p>
-          </div>
-          <Link to="/lancamentos" className="shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-accent">Ver extrato</Link>
+      <Card className="p-4 sm:p-5">
+        <div className="mb-4"><h2 className="text-base font-bold">Categorias do mês</h2><p className="text-xs text-muted-foreground">Distribuição de despesas e receitas por categoria</p></div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {([["despesa",expenseCategoryTotals],["receita",incomeCategoryTotals]] as const).map(([type,groups])=>{
+            const total=groups.reduce((sum,g)=>sum+g.amount,0);
+            return <div key={type} className="min-w-0 space-y-3">
+              <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">{type==="despesa"?"Despesas":"Receitas"}</h3><strong className="text-sm tabular-nums">{brl(total)}</strong></div>
+              {groups.length ? <>
+                <div className="relative mx-auto h-44 w-44 shrink-0">
+                  <PieChart width={176} height={176}><Pie data={groups} dataKey="amount" nameKey="category" innerRadius={54} outerRadius={80} paddingAngle={2} stroke="none" isAnimationActive={false}>{groups.map((g,i)=><Cell key={g.category} fill={categoryColors[i%categoryColors.length]}/>)}</Pie><Tooltip formatter={v=>brl(Number(v))}/></PieChart>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="text-[10px] text-muted-foreground">{type==="despesa"?"GASTOS":"RECEBIDO"}</span><strong className="text-sm tabular-nums">{brl(total)}</strong></div>
+                </div>
+                <ul className="space-y-1.5">{groups.map((g,i)=><li key={g.category} className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 text-xs"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{background:categoryColors[i%categoryColors.length]}}/><span className="min-w-0 flex-1 truncate capitalize">{g.category}</span><span className="shrink-0 font-semibold tabular-nums">{g.percent.toLocaleString("pt-BR",{maximumFractionDigits:1})}%</span></li>)}</ul>
+              </> : <p className="py-5 text-sm text-muted-foreground">Nenhum lançamento no período.</p>}
+            </div>;
+          })}
         </div>
-        {recentTransactions.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Nenhuma movimentação realizada ainda. Toque em + para lançar a primeira.</div>
-        ) : (
-          <ul className="px-2 pb-2">
-            {recentTransactions.map((transaction) => {
-              const amount = Number(transaction.amount);
-              return (
-                <li key={transaction.id as string} className="flex items-center gap-3 rounded-2xl px-3 py-3">
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${amount >= 0 ? "bg-success/15 text-success" : "bg-danger/15 text-danger"}`}>
-                    {amount >= 0 ? <TrendingUp className="h-[18px] w-[18px]" /> : <TrendingDown className="h-[18px] w-[18px]" />}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">{transaction.description as string}</div>
-                    <div className="text-xs text-muted-foreground">{new Date(transaction.occurred_at as string).toLocaleDateString("pt-BR")}</div>
-                  </div>
-                  <span className={`text-sm font-bold tabular-nums ${amount >= 0 ? "text-success" : "text-foreground"}`}>
-                    {amount >= 0 ? "+" : "−"}{brl(Math.abs(amount))}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
-
-      <Card className="p-5">
-        <div className="mb-3"><h2 className="text-base font-bold">Gastos por categoria</h2><p className="text-xs text-muted-foreground">Distribuição das despesas previstas no mês, conforme Tags.</p></div>
-        {expenseCategoryTotals.length ? <div className="grid grid-cols-[minmax(120px,1fr)_minmax(0,1fr)] items-center gap-2">
-          <div className="h-44"><ResponsiveContainer><PieChart><Pie data={expenseCategoryTotals} dataKey="amount" nameKey="category" innerRadius="62%" outerRadius="88%" paddingAngle={3}>{expenseCategoryTotals.map((g,i)=><Cell key={g.category} fill={categoryColors[i%categoryColors.length]}/>)}</Pie><Tooltip formatter={(v)=>brl(Number(v))}/></PieChart></ResponsiveContainer></div>
-          <ul className="space-y-2">{expenseCategoryTotals.slice(0,6).map((g,i)=><li key={g.category} className="flex items-center justify-between gap-2 text-xs"><span className="flex min-w-0 items-center gap-2"><i className="h-2 w-2 shrink-0 rounded-full" style={{background:categoryColors[i%categoryColors.length]}}/><span className="truncate capitalize">{g.category}</span></span><b className="tabular-nums">{g.percent.toLocaleString("pt-BR",{maximumFractionDigits:0})}%</b></li>)}</ul>
-        </div> : <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma despesa categorizada neste mês.</p>}
       </Card>
 
       {/* Receitas x Despesas */}
@@ -247,7 +229,7 @@ function Dashboard() {
           </div>
         </div>
         <div className="h-56">
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <BarChart data={monthsChart} barCategoryGap="28%">
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <XAxis dataKey="m" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />

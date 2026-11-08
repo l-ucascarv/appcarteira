@@ -41,7 +41,7 @@ const NAV = [
   { to: "/faq", label: "FAQ", icon: CircleHelp },
   { to: "/perfil", label: "Perfil", icon: UserRound },
 ] as const;
-const ADD = { to: "/lancamentos", label: "Adicionar", icon: Plus } as const;
+const ADD = { to: "/adicionar", label: "Adicionar", icon: Plus } as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const loc = useLocation();
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {NAV.map((n) => {
             const Icon = n.icon;
             return (
-              <Link key={n.label} to={n.to} hash={n.label === "Adicionar" ? "novo-lancamento" : undefined} preload="viewport" className={itemClass(loc.pathname === n.to)}>
+              <Link key={n.label} to={n.to} hash={undefined} preload="viewport" className={itemClass(loc.pathname === n.to)}>
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {n.label}
               </Link>
@@ -155,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={n.label}
                 to={n.to}
-                hash={n.label === "Adicionar" ? "novo-lancamento" : undefined}
+                hash={undefined}
                 preload="viewport"
                 aria-current={active ? "page" : undefined}
                 className={`mobile-nav-item ${n.label === "Adicionar" ? "mobile-nav-add" : ""} flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[11px] ${
