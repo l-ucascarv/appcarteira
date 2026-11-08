@@ -140,7 +140,7 @@ export function useReceiveIncome() {
       const uid = await currentUserId();
       if (!uid) throw new Error("Sem sessão");
 
-      let running = Number(input.accountBalance) + Number(input.amount);
+      const running = Number(input.accountBalance) + Number(input.amount);
 
       await supabase.from("income").update({
         status: "recebido",
