@@ -132,14 +132,14 @@
   --mobile-selected: oklch(0.95 0 0);
   --mobile-selected-foreground: oklch(0.18 0 0);
   --mobile-nav-shadow: 0 -4px 24px oklch(0 0 0 / 18%);
-  --mobile-action-shadow: 0 4px 12px oklch(0 0 0 / 20%);
+  --mobile-action-shadow: 0 6px 20px oklch(0.77 0.16 75 / 25%);
   --background: oklch(0.15 0.004 250);
   --foreground: oklch(0.97 0 0);
   --card: oklch(0.2 0 0);
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.2 0 0);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.68 0.19 33);
+  --primary: oklch(0.77 0.16 75);
   --primary-foreground: oklch(0.15 0 0);
   --success: oklch(0.74 0.18 150);
   --success-foreground: oklch(0.15 0.02 150);
@@ -377,3 +377,19 @@
 }
 
 
+
+/* Interface financeira inspirada na referência: superfícies escuras, âmbar e cartões compactos. */
+.finance-app .dashboard-view .hero-balance-value { letter-spacing: -0.055em; }
+.finance-app .dashboard-view .recharts-wrapper { max-width: 100%; }
+.finance-app .mobile-nav-add .nav-icon { background: oklch(0.77 0.16 75); color: oklch(0.16 0 0); box-shadow: 0 5px 18px oklch(0.77 0.16 75 / 28%); }
+.finance-app .statement-row { transition: background 160ms ease; }
+.finance-app .statement-row:hover { background: var(--muted); }
+.finance-app .quick-entry { scroll-margin-top: 6rem; }
+@media (max-width: 767px) {
+ .finance-app .page-content { padding-bottom: 6rem; }
+ .finance-app .dashboard-view { gap: 0.75rem; }
+ .finance-app .dashboard-view > .grid { gap: 0.6rem; }
+ .finance-app .dashboard-view > .grid > * { min-width: 0; }
+ .finance-app .entries-view { gap: 1rem; }
+ .finance-app .entries-view .quick-entry { padding: 1rem; }
+}
