@@ -20,7 +20,7 @@ function Comprometido() {
   const { data: expenses = [] } = useExpenses();
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const entries = fixedMonthlyExpenses(expenses, month);
-  return <div className="space-y-6">
+  return <div className="committed-view space-y-6">
     <h1 className="text-2xl font-semibold">Comprometido</h1>
     <ReportMonthPicker month={month} onChange={setMonth} />
     <section className="border-y border-border py-6"><h2 className="text-sm text-muted-foreground">Custo de vida mensal</h2><div className="mt-2 text-3xl font-semibold tabular-nums">{brl(entries.reduce((sum, entry) => sum + entry.amount, 0))}</div><div className="mt-2 text-xs text-muted-foreground">{entries.length} despesas fixas</div></section>

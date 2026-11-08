@@ -104,8 +104,8 @@ function Dashboard() {
     .slice(0, 8);
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="dashboard-view space-y-6">
+      <div className="dashboard-heading">
         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
           {greet(profile?.name ?? "Lucas")}
         </h1>
@@ -118,13 +118,13 @@ function Dashboard() {
       <SpendingAnalysis signature={JSON.stringify([income, expenses, transactions, reserves])} />
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="dashboard-balances grid grid-cols-1 gap-3 sm:grid-cols-3">
         <KpiCard label="Saldo da conta" value={brl(accountBalance)} hint={<>Somente realizado<span className="mt-1 block">Saldo anterior ao mês: {brl(openingBalance)}</span></>} icon={<Wallet className="h-4 w-4" />} />
         <KpiCard label="Reservado" value={brl(reservedBalance)} hint={<Button variant="link" size="sm" className="h-auto p-0" onClick={() => setReserveOpen(true)}>Ajustar reserva</Button>} icon={<ShieldCheck className="h-4 w-4" />} />
         <KpiCard label="Comprometido" value={brl(committedBalance)} hint="Despesas fixas do mês" icon={<CircleDollarSign className="h-4 w-4" />} accent="negative" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="dashboard-monthly grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard label="Receitas do mês" value={brl(monthReceita)} icon={<TrendingUp className="h-4 w-4" />} accent="positive" />
         <KpiCard label="Despesas do mês" value={brl(monthDespesa)} icon={<TrendingDown className="h-4 w-4" />} accent="negative" />
         <KpiCard label="Patrimônio" value={brl(patrimonio)} icon={<PiggyBank className="h-4 w-4" />} />

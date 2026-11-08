@@ -18,7 +18,7 @@ export function SpendingAnalysis({ signature }: { signature: string }) {
     catch (error) { setResult({ data: null, error: error instanceof Error ? error.message : "Erro na análise" }); }
     finally { setBusy(false); }
   }
-  return <section className="space-y-3 border-b border-border pb-6">
+  return <section className="spending-analysis space-y-3 border-b border-border pb-6">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="h-4 w-4 text-primary" />Disponível para gastar</h2>
       <Button variant="outline" size="sm" disabled={busy} onClick={run}><RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Analisando…" : "Analisar com IA"}</Button>

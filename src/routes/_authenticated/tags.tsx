@@ -24,7 +24,7 @@ function Tags() {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [member, setMember] = useState("todos");
   const entries = monthlyEntries(income, expenses, month).filter((entry) => member === "todos" || entry.user_id === member);
-  return <div className="space-y-6">
+  return <div className="categories-view space-y-6">
     <h1 className="text-2xl font-semibold">Tags</h1>
     <ReportMonthPicker month={month} onChange={setMonth} />
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">{[{ user_id: "todos", name: "Família" }, ...(family?.members ?? [])].map((m) => <Button key={m.user_id} variant={member === m.user_id ? "secondary" : "ghost"} onClick={() => setMember(m.user_id)}>{m.name}</Button>)}</div>

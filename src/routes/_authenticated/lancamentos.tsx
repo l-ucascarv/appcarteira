@@ -212,7 +212,7 @@ function Lancamentos() {
   const renderGroup = (title: string, subtitle: string, group: Row[], showBalance: boolean) => {
     const groupDays = Array.from(new Set(group.map((row) => row.day)));
     return (
-      <div className="space-y-3">
+      <div className="statement-group space-y-3">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
@@ -231,7 +231,7 @@ function Lancamentos() {
                   <span>Lançamento</span><span className="text-right">Receitas</span><span className="text-right">Despesas</span><span className="text-right">Situação / ações</span>
                 </div>
                 <ul className="divide-y divide-border">
-                  {group.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] md:gap-4">
+                  {group.filter((row) => row.day === day).map((r) => <li key={`${r.table}-${r.id}`} className="statement-row grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_7rem_7rem_10rem] md:gap-4">
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-start gap-1.5"><OwnerIcon owner={r.owner} /><span className="min-w-0 break-words text-sm font-medium">{r.description}</span></div>
                       <p className="mt-1 break-words text-xs text-muted-foreground">{r.category}{r.classification ? ` · ${r.classification === "fixa" ? "Fixa" : "Variável"}` : " · Receita"}</p>
@@ -258,7 +258,7 @@ function Lancamentos() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="entries-view mx-auto max-w-5xl space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Lançamentos</p>
@@ -285,7 +285,7 @@ function Lancamentos() {
         ))}
       </section>
 
-      <section className="border-b border-border pb-5">
+      <section className="quick-entry border-b border-border pb-5">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Novo lançamento</h2>
           <div className="max-w-[180px]">
@@ -303,7 +303,7 @@ function Lancamentos() {
               </Button>
             ))}
           </div>
-          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="sm:col-span-2" />
+          <Input aria-label="Valor" type="number" step="0.01" min="0.01" placeholder={qType === "saida" && qClass === "variavel" && Number(qInstallments) > 1 ? "Valor da parcela (R$)" : "Valor (R$)"} value={qAmount} onChange={(e) => setQAmount(e.target.value)} required className="quick-amount sm:col-span-2" />
           <Input aria-label="Data" type="date" value={qDate} onChange={(e) => setQDate(e.target.value)} required className="sm:col-span-2" />
           <Input aria-label="Descrição" maxLength={200} placeholder="Descrição" value={qName} onChange={(e) => setQName(e.target.value)} required className="sm:col-span-3" />
           <Input aria-label="Categoria" list="known-categories" maxLength={80} placeholder="Categoria (ex.: Mercado)" value={qCat} onChange={(e) => setQCat(e.target.value)} className="sm:col-span-3" />
